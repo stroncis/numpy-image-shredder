@@ -3,24 +3,9 @@ import gradio as gr
 from src.utils import process_image
 from src.config import DEFAULT_IMAGE_URL, DEFAULT_CHUNK_W, DEFAULT_CHUNK_H
 
-# This is default UI, which can render layout in a row, so images are too small.
-# def run_app():
-#     iface = gr.Interface(
-#         fn=process_image,
-#         inputs=[
-#             gr.Textbox(label='Image URL'),
-#             gr.Slider(4, 128, step=4, value=16, label='Chunk Width (px)'),
-#             gr.Slider(4, 128, step=4, value=16, label='Chunk Height (px)')
-#         ],
-#         outputs=gr.Image(type='pil', label='Result'),
-#         title='Photo Shredder Illusion (Numpy Simulation)',
-#         description='Enter an image URL and tweak the chunk sizes to shred and recombine it. Made with NumPy + Gradio.'
-#     )
-#     iface.launch()
-
 
 def run_app():
-    with gr.Blocks() as demo:
+    with gr.Blocks(title="NumPy Image Shredder") as demo:
         gr.Markdown("# AIUA6 PP2 Photo Shredder")
         gr.Markdown("## Made with NumPy + Gradio.")
         gr.Markdown("Enter an image URL and tweak the chunk sizes to shred and recombine it.")
