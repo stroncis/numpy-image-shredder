@@ -1,2 +1,2 @@
 # numpy-image-shredder
-Practical project 2
+AIUA6 Practical project 2
