@@ -8,7 +8,7 @@ def run_app():
     with gr.Blocks(title="NumPy Image Shredder") as demo:
         gr.Markdown("# AIUA6 PP2 Photo Shredder")
         gr.Markdown("## Made with NumPy + Gradio.")
-        gr.Markdown("Enter an image URL and tweak the chunk sizes to shred and recombine it.")
+        gr.Markdown("Enter an image URL and tweak the chunk sizes to shred and recombine to simulate it's content multiplication.")
 
         with gr.Column():
             url_input = gr.Textbox(label='Image URL', value=DEFAULT_IMAGE_URL)
