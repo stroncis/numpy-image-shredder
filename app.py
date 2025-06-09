@@ -1,7 +1,7 @@
 import gradio as gr
 
 from src.utils import process_image
-
+from src.config import DEFAULT_IMAGE_URL, DEFAULT_CHUNK_W, DEFAULT_CHUNK_H
 
 # This is default UI, which can render layout in a row, so images are too small.
 # def run_app():
@@ -18,6 +18,7 @@ from src.utils import process_image
 #     )
 #     iface.launch()
 
+
 def run_app():
     with gr.Blocks() as demo:
         gr.Markdown("# AIUA6 PP2 Photo Shredder")
@@ -25,9 +26,9 @@ def run_app():
         gr.Markdown("Enter an image URL and tweak the chunk sizes to shred and recombine it.")
 
         with gr.Column():
-            url_input = gr.Textbox(label='Image URL')
-            chunk_w_input = gr.Slider(4, 128, step=4, value=16, label='Chunk Width (px)')
-            chunk_h_input = gr.Slider(4, 128, step=4, value=16, label='Chunk Height (px)')
+            url_input = gr.Textbox(label='Image URL', value=DEFAULT_IMAGE_URL)
+            chunk_w_input = gr.Slider(4, 128, step=4, value=DEFAULT_CHUNK_W, label='Chunk Width (px)')
+            chunk_h_input = gr.Slider(4, 128, step=4, value=DEFAULT_CHUNK_H, label='Chunk Height (px)')
 
         output_image = gr.Image(type='pil', label='Result')
 
@@ -42,7 +43,7 @@ def run_app():
         )
 
         def clear_inputs_outputs():
-            return "", 16, 16, None
+            return DEFAULT_IMAGE_URL, DEFAULT_CHUNK_W, DEFAULT_CHUNK_H, None
 
         clear_button.click(
             fn=clear_inputs_outputs,
