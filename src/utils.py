@@ -3,6 +3,7 @@ from io import BytesIO
 import numpy as np
 import requests
 import matplotlib.pyplot as plt
+import gradio as gr
 
 from PIL import Image, UnidentifiedImageError
 
@@ -42,20 +43,24 @@ def pad_image_to_fit_chunks(img, chunk_width, chunk_height):
 
 
 def process_image(url, chunk_w, chunk_h):
-    img = download_image(url)
-    img = pad_image_to_fit_chunks(img, chunk_w, chunk_h)
-    vertical, final = shred_image(img, chunk_w, chunk_h)
+    try:
+        img_array = download_image(url)
+    except (ValueError, UnidentifiedImageError) as e:
+        raise gr.Error(str(e))
+
+    padded_img = pad_image_to_fit_chunks(img_array, chunk_w, chunk_h)
+    vertical_shred, final_shred = shred_image(padded_img, chunk_w, chunk_h)
 
     fig, axs = plt.subplots(1, 3, figsize=(18, 6))
-    axs[0].imshow(img)
+    axs[0].imshow(padded_img)
     axs[0].set_title('Original')
     axs[0].axis('off')
 
-    axs[1].imshow(vertical)
+    axs[1].imshow(vertical_shred)
     axs[1].set_title('After Vertical Shred')
     axs[1].axis('off')
 
-    axs[2].imshow(final)
+    axs[2].imshow(final_shred)
     axs[2].set_title('Final Image')
     axs[2].axis('off')
 
