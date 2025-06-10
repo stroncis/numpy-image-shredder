@@ -93,10 +93,9 @@ def apply_color_effect(img, effect):
         red_only_img[..., 1:] = 0
         return red_only_img
     elif effect == "Grayscale":
-        if img.shape[2] < 3:
-            return img
-        gray_img = np.mean(img_copy, axis=2, keepdims=True)
-        return np.clip(gray_img, 0, 255).astype(np.uint8)
+        gray_img_single_channel = np.mean(img_copy, axis=2, keepdims=True)
+        gray_img_rgb = np.repeat(gray_img_single_channel, 3, axis=2)  # Convert to RGB to prevent colormapping
+        return np.clip(gray_img_rgb, 0, 255).astype(np.uint8)
     elif effect == "Sepia":
         if img_copy.shape[2] < 3:
             return img
