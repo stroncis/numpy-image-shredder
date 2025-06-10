@@ -2,8 +2,8 @@ import os
 
 from .image_updater import get_updated_sample_images
 
-DEFAULT_CHUNK_W = 32
-DEFAULT_CHUNK_H = 32
+DEFAULT_CHUNK_W = 16
+DEFAULT_CHUNK_H = 16
 
 SAMPLE_IMAGES_DATA = get_updated_sample_images()
 
