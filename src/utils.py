@@ -42,7 +42,7 @@ def pad_image_to_fit_chunks(img, chunk_width, chunk_height):
     return padded_img
 
 
-def process_image(url, chunk_w, chunk_h, color_effect, brightness_offset, contrast_factor):
+def process_image(url, chunk_w, chunk_h, color_effect, brightness_offset, contrast_factor, show_guidelines, guideline_color_rgb_array):
     try:
         img_array = download_image(url)
     except (ValueError, UnidentifiedImageError) as e:
@@ -52,6 +52,15 @@ def process_image(url, chunk_w, chunk_h, color_effect, brightness_offset, contra
     img_after_effects = apply_color_effect(padded_img, color_effect, brightness_offset, contrast_factor)
 
     vertical_shred, final_shred = shred_image(img_after_effects, chunk_w, chunk_h)
+
+    display_vertical_shred = vertical_shred
+    display_final_shred = final_shred
+
+    if show_guidelines:
+        display_vertical_shred = draw_guidelines(
+            vertical_shred, chunk_w, orientation='vertical', line_color_rgb=guideline_color_rgb_array)
+        display_final_shred = draw_guidelines(
+            final_shred, chunk_h, orientation='horizontal', line_color_rgb=guideline_color_rgb_array)
 
     effects_applied_list = []
     if color_effect != "None":
@@ -68,11 +77,11 @@ def process_image(url, chunk_w, chunk_h, color_effect, brightness_offset, contra
     axs[0].set_title(f'Input Image')
     axs[0].axis('off')
 
-    axs[1].imshow(vertical_shred)
+    axs[1].imshow(display_vertical_shred)
     axs[1].set_title(f'Vertical Shred{applied_effects_str}')
     axs[1].axis('off')
 
-    axs[2].imshow(final_shred)
+    axs[2].imshow(display_final_shred)
     axs[2].set_title(f'Final Image{applied_effects_str}')
     axs[2].axis('off')
 
@@ -130,3 +139,25 @@ def apply_color_effect(img, effect, brightness_offset, contrast_factor):
         img_temp_float = 128 + contrast_factor * (img_temp_float - 128)
 
     return np.clip(img_temp_float, 0, 255).astype(np.uint8)
+
+
+def draw_guidelines(image_array, chunk_size, orientation='vertical', line_thickness=1, line_color_rgb=np.array([255, 0, 0], dtype=np.uint8)):
+    """Draws guidelines on an image array."""
+    img_with_lines = image_array.copy()
+    h, w, _ = img_with_lines.shape
+
+    if orientation == 'vertical':
+        for i in range(1, w // chunk_size):
+            x = i * chunk_size
+            start_x = max(0, x - line_thickness // 2)
+            end_x = min(w, x + (line_thickness + 1) // 2)
+            if start_x < end_x:
+                img_with_lines[:, start_x:end_x, :] = line_color_rgb
+    elif orientation == 'horizontal':
+        for i in range(1, h // chunk_size):
+            y = i * chunk_size
+            start_y = max(0, y - line_thickness // 2)
+            end_y = min(h, y + (line_thickness + 1) // 2)
+            if start_y < end_y:
+                img_with_lines[start_y:end_y, :, :] = line_color_rgb
+    return img_with_lines
