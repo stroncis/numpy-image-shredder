@@ -98,7 +98,8 @@ def apply_color_effect(img, effect):
         return np.clip(gray_img_rgb, 0, 255).astype(np.uint8)
     elif effect == "Sepia":
         if img_copy.shape[2] < 3:
-            return img
+            # Sepia requires all channels
+            return img  # This will be colormapped by Matplotlib
         sepia_matrix = np.array([
             [0.393, 0.769, 0.189],
             [0.349, 0.686, 0.168],
