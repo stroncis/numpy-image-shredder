@@ -34,6 +34,7 @@ Optionally added some extra features, numpy processing for color channels.
     *   Handpicked sample images to test various aspects and play around
     *   Reset inputs to their default values.
     *   Image re-processing automatically on any input change (chunk size changes update results only on release).
+    *   Slicing guidelines, helping identify chunk edges.
 
 
 ## How It Works
@@ -103,6 +104,8 @@ img_array = np.array([
       ![Screenshot of main menu](assets/images/result_example.webp)
     *   Output view with color alteration - red channel only:<br>
       ![Screenshot of main menu](assets/images/result_fx_example.webp)
+    *   Output view with slicing guidelines:<br>
+      ![Screenshot of main menu](assets/images/result_guidelines_example.webp)
 
 ## Technologies Used
 
