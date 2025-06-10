@@ -30,10 +30,7 @@ def run_app():
             # TODO: brightness and contrast sliders
             color_effect_input = gr.Dropdown(
                 label="Color Effect on Final Image",
-                choices=[
-                    "None", "Invert Colors", "Swap R/G Channels", "Red Channel Only", "Grayscale",
-                    "Sepia", "Brightness Up", "Brightness Down", "Contrast Up", "Contrast Down", "Solarize"
-                ],
+                choices=COLOR_EFFECTS,
                 value="None"
             )
             # TODO: add another shredding level (making 4x4 image), recursion?
