@@ -101,7 +101,7 @@ img_array = np.array([
     *   This figure is saved to an in-memory buffer and converted to a PIL Image, which is then displayed in the Gradio UI.
     *   Output view:<br>
       ![Screenshot of main menu](assets/images/result_example.png)
-    *   Output view with color alterations:<br>
+    *   Output view with color alteration - red channel only:<br>
       ![Screenshot of main menu](assets/images/result_fx_example.png)
 
 ## Technologies Used
