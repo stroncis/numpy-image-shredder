@@ -120,7 +120,7 @@ def apply_color_effect(img, effect):
         factor = 0.7
         return np.clip(128 + factor * (img_copy - 128), 0, 255).astype(np.uint8)
     elif effect == "Solarize":
-        threshold = 128
+        threshold = 128 + 64 + 16
         solarized_img = img.copy()
         solarized_img[solarized_img >= threshold] = 255 - solarized_img[solarized_img >= threshold]
         return solarized_img
