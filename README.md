@@ -21,7 +21,9 @@ Optionally added some extra features, numpy processing for color channels.
     3.  Final Recombined (Shredded) Image
 *   **Error Handling**: Handles and displays errors in the UI.
 *   **Batteries included**: Comes with pre-set default values for the image URL and chunk dimensions for quick testing.
-*   **More Functionality**: Reset inputs to their default values.
+*   **More Functionality**:
+    *   Reset inputs to their default values.
+    *   Image re-processing automatically on any input change (chunk size changes update results only on release).
 
 ## How It Works
 

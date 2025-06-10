@@ -8,6 +8,8 @@ def run_app():
     with gr.Blocks(title="NumPy Image Shredder") as demo:
         gr.Markdown("# AIUA6 PP2 Photo Shredder")
         gr.Markdown("## Made with NumPy + Gradio.")
+        gr.Markdown(
+            "Real world example on a photo print using pasta maker: [Top breeder 🐕](https://youtu.be/f1fXCRtSUWU)")
         gr.Markdown("Enter an image URL and tweak the chunk sizes to shred and recombine to simulate it's content multiplication.")
 
         with gr.Column():
