@@ -14,8 +14,9 @@ def run_app():
 
         with gr.Column():
             url_input = gr.Textbox(label='Image URL', value=DEFAULT_IMAGE_URL)
-            chunk_w_input = gr.Slider(4, 128, step=4, value=DEFAULT_CHUNK_W, label='Chunk Width (px)')
-            chunk_h_input = gr.Slider(4, 128, step=4, value=DEFAULT_CHUNK_H, label='Chunk Height (px)')
+            with gr.Row():
+                chunk_w_input = gr.Slider(4, 128, step=4, value=DEFAULT_CHUNK_W, label='Chunk Width (px)')
+                chunk_h_input = gr.Slider(4, 128, step=4, value=DEFAULT_CHUNK_H, label='Chunk Height (px)')
             color_effect_input = gr.Dropdown(
                 label="Color Effect on Final Image",
                 choices=[
@@ -28,7 +29,7 @@ def run_app():
         output_image = gr.Image(type='pil', label='Result')
 
         with gr.Row():
-            clear_button = gr.Button("Clear")
+            clear_button = gr.Button("Reset to defaults")
 
         input_fields = [url_input, chunk_w_input, chunk_h_input, color_effect_input]
 
