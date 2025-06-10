@@ -1,7 +1,7 @@
 import gradio as gr
 
 from src.utils import process_image
-from src.config import DEFAULT_IMAGE_URL, DEFAULT_CHUNK_W, DEFAULT_CHUNK_H, SAMPLE_IMAGES_DATA
+from src.config import DEFAULT_IMAGE_URL, DEFAULT_CHUNK_W, DEFAULT_CHUNK_H, SAMPLE_IMAGES_DATA, COLOR_EFFECTS
 
 sample_image_choices = [f"{item['name']} - {item['description']}" for item in SAMPLE_IMAGES_DATA]
 
