@@ -2,3 +2,4 @@ gradio
 numpy
 requests
 matplotlib
+Pillow
