@@ -42,18 +42,20 @@ def pad_image_to_fit_chunks(img, chunk_width, chunk_height):
     return padded_img
 
 
-def process_image(url, chunk_w, chunk_h):
+def process_image(url, chunk_w, chunk_h, color_effect):
     try:
         img_array = download_image(url)
     except (ValueError, UnidentifiedImageError) as e:
         raise gr.Error(str(e))
 
     padded_img = pad_image_to_fit_chunks(img_array, chunk_w, chunk_h)
-    vertical_shred, final_shred = shred_image(padded_img, chunk_w, chunk_h)
+    padded_img_fx = apply_color_effect(padded_img, color_effect)
+
+    vertical_shred, final_shred = shred_image(padded_img_fx, chunk_w, chunk_h)
 
     fig, axs = plt.subplots(1, 3, figsize=(18, 6))
     axs[0].imshow(padded_img)
-    axs[0].set_title('Original')
+    axs[2].set_title(f'Final Image ({color_effect})')
     axs[0].axis('off')
 
     axs[1].imshow(vertical_shred)
@@ -72,3 +74,55 @@ def process_image(url, chunk_w, chunk_h):
     plt.close(fig)
 
     return img_result
+
+
+def apply_color_effect(img, effect):
+    img_copy = img.astype(np.float32)
+
+    if effect == "None":
+        return img
+    elif effect == "Invert Colors":
+        return 255 - img
+    elif effect == "Swap R/G Channels":
+        swapped_img = img.copy()
+        swapped_img[..., 0], swapped_img[..., 1] = swapped_img[..., 1].copy(), swapped_img[..., 0].copy()
+        return swapped_img
+    elif effect == "Red Channel Only":
+        red_only_img = img.copy()
+        red_only_img[..., 1:] = 0
+        return red_only_img
+    elif effect == "Grayscale":
+        if img.shape[2] < 3:
+            return img
+        gray_img = np.mean(img_copy, axis=2, keepdims=True)
+        return np.clip(gray_img, 0, 255).astype(np.uint8)
+    elif effect == "Sepia":
+        if img_copy.shape[2] < 3:
+            return img
+        sepia_matrix = np.array([
+            [0.393, 0.769, 0.189],
+            [0.349, 0.686, 0.168],
+            [0.272, 0.534, 0.131]
+        ])
+        r, g, b = img_copy[..., 0], img_copy[..., 1], img_copy[..., 2]
+        img_copy[..., 0] = r * sepia_matrix[0, 0] + g * sepia_matrix[0, 1] + b * sepia_matrix[0, 2]
+        img_copy[..., 1] = r * sepia_matrix[1, 0] + g * sepia_matrix[1, 1] + b * sepia_matrix[1, 2]
+        img_copy[..., 2] = r * sepia_matrix[2, 0] + g * sepia_matrix[2, 1] + b * sepia_matrix[2, 2]
+        return np.clip(img_copy, 0, 255).astype(np.uint8)
+    elif effect == "Brightness Up":
+        return np.clip(img_copy + 30, 0, 255).astype(np.uint8)
+    elif effect == "Brightness Down":
+        return np.clip(img_copy - 30, 0, 255).astype(np.uint8)
+    elif effect == "Contrast Up":
+        factor = 1.5
+        return np.clip(128 + factor * (img_copy - 128), 0, 255).astype(np.uint8)
+    elif effect == "Contrast Down":
+        factor = 0.7
+        return np.clip(128 + factor * (img_copy - 128), 0, 255).astype(np.uint8)
+    elif effect == "Solarize":
+        threshold = 128
+        solarized_img = img.copy()
+        solarized_img[solarized_img >= threshold] = 255 - solarized_img[solarized_img >= threshold]
+        return solarized_img
+    else:
+        return img

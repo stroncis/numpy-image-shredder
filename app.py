@@ -14,20 +14,21 @@ def run_app():
             url_input = gr.Textbox(label='Image URL', value=DEFAULT_IMAGE_URL)
             chunk_w_input = gr.Slider(4, 128, step=4, value=DEFAULT_CHUNK_W, label='Chunk Width (px)')
             chunk_h_input = gr.Slider(4, 128, step=4, value=DEFAULT_CHUNK_H, label='Chunk Height (px)')
+            color_effect_input = gr.Dropdown(
+                label="Color Effect on Final Image",
+                choices=[
+                    "None", "Invert Colors", "Swap R/G Channels", "Red Channel Only", "Grayscale",
+                    "Sepia", "Brightness Up", "Brightness Down", "Contrast Up", "Contrast Down", "Solarize"
+                ],
+                value="None"
+            )
 
         output_image = gr.Image(type='pil', label='Result')
 
         with gr.Row():
             clear_button = gr.Button("Clear")
-            # submit_button = gr.Button("Submit")
 
-        input_fields = [url_input, chunk_w_input, chunk_h_input]
-
-        # submit_button.click(
-        #     fn=process_image,
-        #     inputs=input_fields,
-        #     outputs=output_image
-        # )
+        input_fields = [url_input, chunk_w_input, chunk_h_input, color_effect_input]
 
         url_input.change(
             fn=process_image,
@@ -44,26 +45,33 @@ def run_app():
             inputs=input_fields,
             outputs=output_image
         )
+        color_effect_input.change(
+            fn=process_image,
+            inputs=input_fields,
+            outputs=output_image
+        )
 
         def clear_inputs_outputs():
             image = process_image(
                 url=DEFAULT_IMAGE_URL,
                 chunk_w=DEFAULT_CHUNK_W,
-                chunk_h=DEFAULT_CHUNK_H
+                chunk_h=DEFAULT_CHUNK_H,
+                color_effect="None"
             )
-            return DEFAULT_IMAGE_URL, DEFAULT_CHUNK_W, DEFAULT_CHUNK_H, image
+            return DEFAULT_IMAGE_URL, DEFAULT_CHUNK_W, DEFAULT_CHUNK_H, "None", image
 
         clear_button.click(
             fn=clear_inputs_outputs,
             inputs=None,
-            outputs=[url_input, chunk_w_input, chunk_h_input, output_image]
+            outputs=[url_input, chunk_w_input, chunk_h_input, color_effect_input, output_image]
         )
 
         def load_initial_image():
             return process_image(
                 url=DEFAULT_IMAGE_URL,
                 chunk_w=DEFAULT_CHUNK_W,
-                chunk_h=DEFAULT_CHUNK_H
+                chunk_h=DEFAULT_CHUNK_H,
+                color_effect="None"
             )
 
         demo.load(
