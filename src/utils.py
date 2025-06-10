@@ -52,18 +52,19 @@ def process_image(url, chunk_w, chunk_h, color_effect):
     padded_img_fx = apply_color_effect(padded_img, color_effect)
 
     vertical_shred, final_shred = shred_image(padded_img_fx, chunk_w, chunk_h)
+    color_effect_str = f" ({color_effect})" if color_effect != "None" else ""
 
-    fig, axs = plt.subplots(1, 3, figsize=(18, 6))
+    fig, axs = plt.subplots(1, 3, figsize=(18, 6.75), dpi=100)
     axs[0].imshow(padded_img)
-    axs[2].set_title(f'Final Image ({color_effect})')
+    axs[0].set_title(f'Input Image')
     axs[0].axis('off')
 
     axs[1].imshow(vertical_shred)
-    axs[1].set_title('After Vertical Shred')
+    axs[1].set_title(f'After Vertical Shred{color_effect_str}')
     axs[1].axis('off')
 
     axs[2].imshow(final_shred)
-    axs[2].set_title('Final Image')
+    axs[2].set_title(f'Final Image{color_effect_str}')
     axs[2].axis('off')
 
     plt.tight_layout()
