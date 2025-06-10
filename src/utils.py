@@ -2,6 +2,11 @@ from io import BytesIO
 
 import numpy as np
 import requests
+import matplotlib
+# Agg is a non-interactive backend that can only write to files. Running in this mode
+# should prevent from crashing when Gradio avoiding UI blocking runs `process_image`
+# on a separate, worker thread. Thus Matplotlib server side is separated from the UI thread.
+matplotlib.use('Agg')  # This must be called before `import matplotlib.pyplot as plt`
 import matplotlib.pyplot as plt
 import gradio as gr
 
