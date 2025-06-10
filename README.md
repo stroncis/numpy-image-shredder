@@ -100,9 +100,9 @@ img_array = np.array([
     *   `matplotlib` is used to create a figure with three subplots showing the original (padded) image, the image after vertical shredding, and the final shredded image.
     *   This figure is saved to an in-memory buffer and converted to a PIL Image, which is then displayed in the Gradio UI.
     *   Output view:<br>
-      ![Screenshot of main menu](assets/images/result_example.png)
+      ![Screenshot of main menu](assets/images/result_example.webp)
     *   Output view with color alteration - red channel only:<br>
-      ![Screenshot of main menu](assets/images/result_fx_example.png)
+      ![Screenshot of main menu](assets/images/result_fx_example.webp)
 
 ## Technologies Used
 
