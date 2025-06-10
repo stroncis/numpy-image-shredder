@@ -12,8 +12,13 @@ if SAMPLE_IMAGES_DATA:
 else:
     DEFAULT_IMAGE_URL = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Yellow_flowers_a.jpg/960px-Yellow_flowers_a.jpg"
 
-DEFAULT_COLOR_EFFECT = "None"
+# Effects for Radio buttons
 COLOR_EFFECTS = [
     "None", "Invert Colors", "Swap R/G Channels", "Red Channel Only", "Grayscale",
-    "Sepia", "Brightness Up", "Brightness Down", "Contrast Up", "Contrast Down", "Solarize"
+    "Sepia", "Solarize"
 ]
+DEFAULT_COLOR_EFFECT = "None"
+
+# Defaults for sliders
+DEFAULT_BRIGHTNESS = 0
+DEFAULT_CONTRAST = 1.0  # Factor 1.0 means no change

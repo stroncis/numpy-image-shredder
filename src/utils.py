@@ -35,24 +35,33 @@ def download_image(url):
 
 
 def pad_image_to_fit_chunks(img, chunk_width, chunk_height):
-    h, w, c = img.shape
+    h, w, _ = img.shape
     pad_h = (chunk_height - (h % chunk_height)) % chunk_height
     pad_w = (chunk_width - (w % chunk_width)) % chunk_width
     padded_img = np.pad(img, ((0, pad_h), (0, pad_w), (0, 0)), mode='edge')
     return padded_img
 
 
-def process_image(url, chunk_w, chunk_h, color_effect):
+def process_image(url, chunk_w, chunk_h, color_effect, brightness_offset, contrast_factor):
     try:
         img_array = download_image(url)
     except (ValueError, UnidentifiedImageError) as e:
         raise gr.Error(str(e))
 
     padded_img = pad_image_to_fit_chunks(img_array, chunk_w, chunk_h)
-    padded_img_fx = apply_color_effect(padded_img, color_effect)
+    img_after_effects = apply_color_effect(padded_img, color_effect, brightness_offset, contrast_factor)
 
-    vertical_shred, final_shred = shred_image(padded_img_fx, chunk_w, chunk_h)
-    color_effect_str = f" ({color_effect})" if color_effect != "None" else ""
+    vertical_shred, final_shred = shred_image(img_after_effects, chunk_w, chunk_h)
+
+    effects_applied_list = []
+    if color_effect != "None":
+        effects_applied_list.append(color_effect)
+    if brightness_offset != 0:
+        effects_applied_list.append(f"Bright {brightness_offset:+.0f}")
+    if contrast_factor != 1.0:
+        effects_applied_list.append(f"Contrast x{contrast_factor:.1f}")
+
+    applied_effects_str = f" ({', '.join(effects_applied_list)})" if effects_applied_list else ""
 
     fig, axs = plt.subplots(1, 3, figsize=(18, 6.75), dpi=100)
     axs[0].imshow(padded_img)
@@ -60,11 +69,11 @@ def process_image(url, chunk_w, chunk_h, color_effect):
     axs[0].axis('off')
 
     axs[1].imshow(vertical_shred)
-    axs[1].set_title(f'After Vertical Shred{color_effect_str}')
+    axs[1].set_title(f'Vertical Shred{applied_effects_str}')
     axs[1].axis('off')
 
     axs[2].imshow(final_shred)
-    axs[2].set_title(f'Final Image{color_effect_str}')
+    axs[2].set_title(f'Final Image{applied_effects_str}')
     axs[2].axis('off')
 
     plt.tight_layout()
@@ -77,27 +86,25 @@ def process_image(url, chunk_w, chunk_h, color_effect):
     return img_result
 
 
-def apply_color_effect(img, effect):
-    img_copy = img.astype(np.float32)
+def apply_color_effect(img, effect, brightness_offset, contrast_factor):
+    img_temp_float = img.astype(np.float32)
 
-    if effect == "None":
-        return img
-    elif effect == "Invert Colors":
-        return 255 - img
+    # 1. Apply the base color effect
+    if effect == "Invert Colors":
+        img_temp_float = 255 - img_temp_float
     elif effect == "Swap R/G Channels":
-        swapped_img = img.copy()
-        swapped_img[..., 0], swapped_img[..., 1] = swapped_img[..., 1].copy(), swapped_img[..., 0].copy()
-        return swapped_img
+        temp_swap = img_temp_float.copy()
+        temp_swap[..., 0], temp_swap[..., 1] = temp_swap[..., 1].copy(), temp_swap[..., 0].copy()
+        img_temp_float = temp_swap
     elif effect == "Red Channel Only":
-        red_only_img = img.copy()
-        red_only_img[..., 1:] = 0
-        return red_only_img
+        temp_red = img_temp_float.copy()
+        temp_red[..., 1:] = 0
+        img_temp_float = temp_red
     elif effect == "Grayscale":
-        gray_img_single_channel = np.mean(img_copy, axis=2, keepdims=True)
-        gray_img_rgb = np.repeat(gray_img_single_channel, 3, axis=2)  # Convert to RGB to prevent colormapping
-        return np.clip(gray_img_rgb, 0, 255).astype(np.uint8)
+        gray_img_single_channel = np.mean(img_temp_float, axis=2, keepdims=True)
+        img_temp_float = np.repeat(gray_img_single_channel, 3, axis=2)
     elif effect == "Sepia":
-        if img_copy.shape[2] < 3:
+        if img_temp_float.shape[2] < 3:
             # Sepia requires all channels
             return img  # This will be colormapped by Matplotlib
         sepia_matrix = np.array([
@@ -105,25 +112,21 @@ def apply_color_effect(img, effect):
             [0.349, 0.686, 0.168],
             [0.272, 0.534, 0.131]
         ])
-        r, g, b = img_copy[..., 0], img_copy[..., 1], img_copy[..., 2]
-        img_copy[..., 0] = r * sepia_matrix[0, 0] + g * sepia_matrix[0, 1] + b * sepia_matrix[0, 2]
-        img_copy[..., 1] = r * sepia_matrix[1, 0] + g * sepia_matrix[1, 1] + b * sepia_matrix[1, 2]
-        img_copy[..., 2] = r * sepia_matrix[2, 0] + g * sepia_matrix[2, 1] + b * sepia_matrix[2, 2]
-        return np.clip(img_copy, 0, 255).astype(np.uint8)
-    elif effect == "Brightness Up":
-        return np.clip(img_copy + 30, 0, 255).astype(np.uint8)
-    elif effect == "Brightness Down":
-        return np.clip(img_copy - 30, 0, 255).astype(np.uint8)
-    elif effect == "Contrast Up":
-        factor = 1.5
-        return np.clip(128 + factor * (img_copy - 128), 0, 255).astype(np.uint8)
-    elif effect == "Contrast Down":
-        factor = 0.7
-        return np.clip(128 + factor * (img_copy - 128), 0, 255).astype(np.uint8)
+        r, g, b = img_temp_float[..., 0].copy(), img_temp_float[..., 1].copy(), img_temp_float[..., 2].copy()
+        img_temp_float[..., 0] = r * sepia_matrix[0, 0] + g * sepia_matrix[0, 1] + b * sepia_matrix[0, 2]
+        img_temp_float[..., 1] = r * sepia_matrix[1, 0] + g * sepia_matrix[1, 1] + b * sepia_matrix[1, 2]
+        img_temp_float[..., 2] = r * sepia_matrix[2, 0] + g * sepia_matrix[2, 1] + b * sepia_matrix[2, 2]
     elif effect == "Solarize":
         threshold = 128 + 64 + 16
-        solarized_img = img.copy()
-        solarized_img[solarized_img >= threshold] = 255 - solarized_img[solarized_img >= threshold]
-        return solarized_img
-    else:
-        return img
+        condition = img_temp_float >= threshold
+        img_temp_float[condition] = 255 - img_temp_float[condition]
+
+    # 2. Apply Brightness
+    if brightness_offset != 0:
+        img_temp_float = img_temp_float + brightness_offset
+
+    # 3. Apply Contrast
+    if contrast_factor != 1.0:
+        img_temp_float = 128 + contrast_factor * (img_temp_float - 128)
+
+    return np.clip(img_temp_float, 0, 255).astype(np.uint8)
