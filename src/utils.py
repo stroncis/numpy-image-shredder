@@ -1,4 +1,5 @@
 from io import BytesIO
+import datetime
 
 import numpy as np
 import requests
@@ -47,7 +48,10 @@ def pad_image_to_fit_chunks(img, chunk_width, chunk_height):
     return padded_img
 
 
-def process_image(url, chunk_w, chunk_h, color_effect, brightness_offset, contrast_factor, show_guidelines, guideline_color_rgb_array):
+def process_image(url, chunk_w, chunk_h, color_effect, brightness_offset, contrast_factor, show_guidelines, guideline_color_rgb_array, source=None):
+    if source:
+        print(f"{datetime.datetime.now().strftime('%H:%M:%S')} Processing image invoked from {source}")
+
     try:
         img_array = download_image(url)
     except (ValueError, UnidentifiedImageError) as e:

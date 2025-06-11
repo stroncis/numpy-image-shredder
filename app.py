@@ -92,7 +92,7 @@ def run_app():
 
         def on_any_input_change(url, cw, ch, effect, brightness, contrast, guidelines, guideline_color_name):
             guideline_color_rgb = np.array(GUIDELINE_COLORS.get(guideline_color_name, GUIDELINE_COLORS[DEFAULT_GUIDELINE_COLOR_NAME]), dtype=np.uint8)
-            return process_image(url, cw, ch, effect, brightness, contrast, guidelines, guideline_color_rgb)
+            return process_image(url, cw, ch, effect, brightness, contrast, guidelines, guideline_color_rgb, source='User Input')
 
         for comp in [
             url_input, color_effect_input, brightness_slider, contrast_slider,
@@ -122,7 +122,8 @@ def run_app():
                 brightness_offset=DEFAULT_BRIGHTNESS,
                 contrast_factor=DEFAULT_CONTRAST,
                 show_guidelines=DEFAULT_SHOW_GUIDELINES,
-                guideline_color_rgb_array=guideline_color_rgb
+                guideline_color_rgb_array=guideline_color_rgb,
+                source='Clear Button'
             )
             return (
                 DEFAULT_IMAGE_URL, DEFAULT_CHUNK_W, DEFAULT_CHUNK_H,
@@ -152,7 +153,8 @@ def run_app():
                 brightness_offset=DEFAULT_BRIGHTNESS,
                 contrast_factor=DEFAULT_CONTRAST,
                 show_guidelines=DEFAULT_SHOW_GUIDELINES,
-                guideline_color_rgb_array=guideline_color_rgb
+                guideline_color_rgb_array=guideline_color_rgb,
+                source='Initial Load'
             )
 
         demo.load(
