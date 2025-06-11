@@ -1,19 +1,21 @@
-from io import BytesIO
 import datetime
+from io import BytesIO
 
-import numpy as np
 import requests
-import matplotlib
+import numpy as np
+import gradio as gr
+import matplotlib.pyplot as plt
+from PIL import Image, UnidentifiedImageError
+
+from .config import OUTPUT_IMAGE_WIDTH, OUTPUT_IMAGE_HEIGHT, OUTPUT_IMAGE_DPI
+from src.shredder import shred_image
+
+# import matplotlib
+# This is commented in case plot rendering heisenbug would surface.
 # Agg is a non-interactive backend that can only write to files. Running in this mode
 # should prevent from crashing when Gradio avoiding UI blocking runs `process_image`
 # on a separate, worker thread. Thus Matplotlib server side is separated from the UI thread.
-matplotlib.use('Agg')  # This must be called before `import matplotlib.pyplot as plt`
-import matplotlib.pyplot as plt
-import gradio as gr
-
-from PIL import Image, UnidentifiedImageError
-
-from src.shredder import shred_image
+# matplotlib.use('Agg')  # This must be called before `import matplotlib.pyplot as plt`
 
 
 def download_image(url):
@@ -81,7 +83,7 @@ def process_image(url, chunk_w, chunk_h, color_effect, brightness_offset, contra
 
     applied_effects_str = f" ({', '.join(effects_applied_list)})" if effects_applied_list else ""
 
-    fig, axs = plt.subplots(1, 3, figsize=(18, 6.75), dpi=100)
+    fig, axs = plt.subplots(1, 3, figsize=(OUTPUT_IMAGE_WIDTH, OUTPUT_IMAGE_HEIGHT), dpi=OUTPUT_IMAGE_DPI)
     axs[0].imshow(padded_img)
     axs[0].set_title(f'Input Image')
     axs[0].axis('off')

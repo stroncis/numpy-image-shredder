@@ -2,6 +2,14 @@ import os
 
 from .image_updater import get_updated_sample_images
 
+# Output image width in pixels
+OUTPUT_IMAGE_WIDTH_IN_PIXELS = 1800
+
+# Output image size in inches
+OUTPUT_IMAGE_DPI = 100
+OUTPUT_IMAGE_WIDTH = OUTPUT_IMAGE_WIDTH_IN_PIXELS / OUTPUT_IMAGE_DPI
+OUTPUT_IMAGE_HEIGHT = OUTPUT_IMAGE_WIDTH * 0.375
+
 DEFAULT_CHUNK_W = 16
 DEFAULT_CHUNK_H = 16
 
