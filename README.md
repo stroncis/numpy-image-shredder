@@ -115,7 +115,7 @@ img_array = np.array([
       ![Output view](assets/images/result_example.png)
     *   Output view with color alteration - swap red and green channels:<br>
       ![Output with effect](assets/images/result_fx_example_1.png)
-    *   Output view with color alteration - red channel only, brightness, contrast:<br>
+    *   Output view with multiple effects - red channel only, brightness, contrast:<br>
       ![Output with multiple effects](assets/images/result_fx_example_2.png)
     *   Output view with slicing guidelines:<br>
       ![Output with guidelines](assets/images/result_guidelines_example.png)
