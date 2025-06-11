@@ -60,7 +60,7 @@ def run_app():
             # TODO: padding does not look good, it creates pixel stretching artefacts on the edges.
             #       As a solution, mirror the same amount of pixes as the offset instead of repeating last pixel.
 
-        output_image = gr.Image(type='pil', label='Result')
+        output_image = gr.Image(type='pil', label='Result', format='png')
 
         with gr.Row():
             clear_button = gr.Button("Reset to defaults")
