@@ -44,7 +44,7 @@ DEFAULT_SAMPLE_IMAGES_DATA = [
     },
     {
         "name": "Stefan Sagmeister's book cover",
-        "description": "APPLY RED FILTER!",
+        "description": "Apply 'Swap R/G Channels' or 'Red Channel Only' for the best effect",
         "base_url": "https://www.leboncoin.fr/ad/livres/2856453141",
         "image_url": "https://img.leboncoin.fr/api/v1/lbcpb1/images/25/04/85/25048572a1c62486c5f84c01a3386c59b2b23c61.jpg?rule=ad-large",
         "license": "Unknown"
