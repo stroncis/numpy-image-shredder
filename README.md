@@ -6,15 +6,22 @@ Optionally added some extra features, numpy processing for color channels.
 
 ## Features
 
-*   **Web-Based UI**: Interactive interface built with Gradio.
+*   **Web-Based UI**: Interactive interface built with Gradio:
+
+    ![App GUI view](assets/images/app_gui_layout.png)
+
 *   **Image Input via URL**: Users can provide any direct image URL.
+
 *   **Customizable Shredding**:
     *   Adjustable chunk width and height using sliders.
     *   Supports square or rectangular chunks, leading to varied visual effects.
+
 *   **Image Padding**: Input images are automatically padded (using edge pixels) to ensure dimensions are perfectly divisible by the chosen chunk sizes.
+
 *   **Two-Step Shredding Proces (as per requirement)**:
     1.  **Vertical Shredding**: Image is sliced into vertical strips, which are then reordered (even-indexed strips followed by odd-indexed strips).
     2.  **Horizontal Shredding**: The result of vertical shredding is then sliced into horizontal strips, which are similarly reordered.
+
 *   **Color Effects**: A Numpy playground as a selection of color transformations applied to the image using NumPy array operations:
     *   Invert Colors
     *   Swap R/G Channels
@@ -24,12 +31,16 @@ Optionally added some extra features, numpy processing for color channels.
     *   Brightness Up/Down
     *   Contrast Up/Down
     *   Solarize
+
 *   **Visual Output**: Displays three stages of the image:
     1.  Original (Padded) Image
     2.  Image After Vertical Shredding
     3.  Final Recombined (Shredded) Image
+
 *   **Error Handling**: Handles and displays errors in the UI.
+
 *   **Batteries included**: Comes with pre-set default values for the image URL and chunk dimensions for quick testing.
+
 *   **More Functionality**:
     *   Handpicked sample images to test various aspects and play around
     *   Reset inputs to their default values.
@@ -60,11 +71,11 @@ img_array = np.array([
 ### Actions:
 1.  **Image Download**: The application fetches an image from the provided URL using the `requests` library. A `User-Agent` header is used to mimic a browser request.
 
-    Initially application provides hand-picked image drop-down list. Images (with appropriate licenses) are fetched from a image stock platform and wikimedia. Image stock platform constantly updates hashes in direct image urls so they should be checked and updated on each launch. To make it minimal, only `requests` library used with regex selector. There are some protections from automated browsing, so added multiple headers and `brotli` library to make it available for `requests`.
+    Initially application provides hand-picked image drop-down list. Images (with appropriate licenses) are fetched from a image stock platform and wikimedia. Image stock platform constantly updates hashes in direct image urls so they should be checked and updated on each launch. To make it minimal, only `requests` library used with regex selector. There are some protections from automated browsing, so to simulate a user browser needed to add multiple headers which are sent usually by browsers and to unpack `response.text` added `brotli` library as `requests` does not include it.
 
 2.  **Image Preparation**:
     *   The downloaded image is converted to a PIL Image object and then to a NumPy array.
-    *   The NumPy array is padded using `np.pad` with `mode='edge'` so that its width and height are exact multiples of the user-defined `chunk_width` and `chunk_height`.
+    *   The NumPy array is padded using `np.pad` with `mode='edge'` so that its width and height are exact multiples of the user-defined `chunk_width` and `chunk_height`. As a cons, it results in _pixel stretching_ artefacts for large chunk sizes.
 
 3.  **Color Effects Application (`utils.py -> apply_color_effect`)**: If a color effect other than "None" is selected, it's applied to the padded image array using NumPy. The image array is first converted to `np.float32` for calculations to prevent data loss or overflow, and then clipped back to the 0-255 range and converted to `np.uint8`. Effects descriptions:
     *   **Invert Colors**: `255 - img_array`. NumPy performs element-wise subtraction of each pixel value from scalar 255, broadcasting to match `img` array shape. Another way is to use `~img` or `numpy.invert(img)` bitwise NOT, which would work on `uint8`, though it is less intuitively readable. Applying this to `img_copy` (which is `float32`) would be maybe slightly less performant but still correct, though `numpy.invert(img_copy)` - not.
@@ -101,11 +112,13 @@ img_array = np.array([
     *   `matplotlib` is used to create a figure with three subplots showing the original (padded) image, the image after vertical shredding, and the final shredded image.
     *   This figure is saved to an in-memory buffer and converted to a PIL Image, which is then displayed in the Gradio UI.
     *   Output view:<br>
-      ![Screenshot of main menu](assets/images/result_example.webp)
-    *   Output view with color alteration - red channel only:<br>
-      ![Screenshot of main menu](assets/images/result_fx_example.webp)
+      ![Output view](assets/images/result_example.png)
+    *   Output view with color alteration - swap red and green channels:<br>
+      ![Output with effect](assets/images/result_fx_example_1.png)
+    *   Output view with color alteration - red channel only, brightness, contrast:<br>
+      ![Output with multiple effects](assets/images/result_fx_example_2.png)
     *   Output view with slicing guidelines:<br>
-      ![Screenshot of main menu](assets/images/result_guidelines_example.webp)
+      ![Output with guidelines](assets/images/result_guidelines_example.png)
 
 ## Technologies Used
 
