@@ -89,7 +89,7 @@ img_array = np.array([
 
     *   **Brightness Up/Down**: `np.clip(img_copy + 30, 0, 255)` or `np.clip(img_copy - 30, 0, 255)`. A constant value is added to or subtracted from every pixel value in the NumPy array. `np.clip` ensures values remain in the valid [0, 255] range.
 
-    *   **Contrast Up/Down**: `np.clip(128 + factor * (img_copy - 128), 0, 255)`. The formula adjusts pixel values relative to the mid-gray point (128), scaled by a `factor`. All operations are NumPy element-wise arithmetic. Factor for contrast _up_ is 1.5, while _down_ is 0.7, approximation for 1/1.5. Factor `> 1` increases contrast, `0 < factor < 1` decreases while `0` makes the whole image at `128` gray level.
+    *   **Contrast Up/Down**: `np.clip(128 + factor * (img_copy - 128), 0, 255)`. The formula adjusts pixel values relative to the mid-gray point (128), scaled by a `factor`. All operations are NumPy element-wise arithmetic. Factor `> 1` increases contrast, `0 < factor < 1` decreases while `0` makes the whole image at `128` gray level.
 
     *   **Solarize**: In photography, [solarization](https://en.wikipedia.org/wiki/Solarization_(photography)) is the effect of tone reversal observed in cases of extreme overexposure of the photographic film in the camera. Not a big fan of this, but it is ubiquitous. A higher threshold value sets a brighter threshold, and colors need to be brighter to be overexposed. `solarized_img[solarized_img >= threshold] = 255 - solarized_img[solarized_img >= threshold]`. NumPy's boolean array indexing is used to select pixels above a `threshold` and inverts their values.
 
