@@ -7,7 +7,7 @@ import gradio as gr
 import matplotlib.pyplot as plt
 from PIL import Image, UnidentifiedImageError
 
-from .config import OUTPUT_IMAGE_WIDTH, OUTPUT_IMAGE_HEIGHT, OUTPUT_IMAGE_DPI
+from .config import OUTPUT_IMAGE_DPI, OUTPUT_IMAGE_ASPECT_RATIO, OUTPUT_IMAGE_WIDTH_IN_PIXELS, MIN_VALID_OUTPUT_WIDTH, DEFAULT_TITLE_FONT_SIZE
 from src.shredder import shred_image
 
 # import matplotlib
@@ -50,9 +50,14 @@ def pad_image_to_fit_chunks(img, chunk_width, chunk_height):
     return padded_img
 
 
-def process_image(url, chunk_w, chunk_h, color_effect, brightness_offset, contrast_factor, show_guidelines, guideline_color_rgb_array, source=None):
-    if source:
-        print(f"{datetime.datetime.now().strftime('%H:%M:%S')} Processing image invoked from {source}")
+def process_image(url, chunk_w, chunk_h, color_effect, brightness_offset, contrast_factor, show_guidelines, guideline_color_rgb_array, output_image_width, source=None):
+    if output_image_width is None or not isinstance(output_image_width, (int, float)) or output_image_width < MIN_VALID_OUTPUT_WIDTH:
+        raise gr.Error(
+            f"Output image width must be a positive number. Received: '{output_image_width}'. Please enter a valid width (e.g., >= {MIN_VALID_OUTPUT_WIDTH}px)."
+        )
+
+    # if source:
+        # print(f"{datetime.datetime.now().strftime('%H:%M:%S')} Processing image invoked from {source}")
 
     try:
         img_array = download_image(url)
@@ -83,17 +88,39 @@ def process_image(url, chunk_w, chunk_h, color_effect, brightness_offset, contra
 
     applied_effects_str = f" ({', '.join(effects_applied_list)})" if effects_applied_list else ""
 
-    fig, axs = plt.subplots(1, 3, figsize=(OUTPUT_IMAGE_WIDTH, OUTPUT_IMAGE_HEIGHT), dpi=OUTPUT_IMAGE_DPI)
+    if output_image_width < MIN_VALID_OUTPUT_WIDTH:
+        scaled_title_fontsize = DEFAULT_TITLE_FONT_SIZE
+    else:
+        scaled_title_fontsize = (output_image_width / OUTPUT_IMAGE_WIDTH_IN_PIXELS) * DEFAULT_TITLE_FONT_SIZE
+    scaled_title_fontsize = np.clip(scaled_title_fontsize, 7, 72)  # Clamping font size to a reasonable range
+
+    current_dpi = OUTPUT_IMAGE_DPI
+    if current_dpi == 0:
+        raise gr.Error("Output Image DPI in configuration cannot be zero.")
+
+    output_image_height = output_image_width / OUTPUT_IMAGE_ASPECT_RATIO
+
+    fig_w = output_image_width / current_dpi
+    fig_h = output_image_height / current_dpi
+
+    if fig_w <= 0 or fig_h <= 0:
+        raise gr.Error(
+            f"Calculated figure dimensions are invalid (width: {fig_w:.2f}in, height: {fig_h:.2f}in). "
+            f"Please check output width ({output_image_width}px) and aspect ratio ({OUTPUT_IMAGE_ASPECT_RATIO})."
+        )
+
+    fig, axs = plt.subplots(1, 3, figsize=(fig_w, fig_h), dpi=current_dpi)
+
     axs[0].imshow(padded_img)
-    axs[0].set_title(f'Input Image')
+    axs[0].set_title(f'Input Image', fontsize=scaled_title_fontsize)
     axs[0].axis('off')
 
     axs[1].imshow(display_vertical_shred)
-    axs[1].set_title(f'Vertical Shred{applied_effects_str}')
+    axs[1].set_title(f'Vertical Shred{applied_effects_str}', fontsize=scaled_title_fontsize)
     axs[1].axis('off')
 
     axs[2].imshow(display_final_shred)
-    axs[2].set_title(f'Final Image{applied_effects_str}')
+    axs[2].set_title(f'Final Image{applied_effects_str}', fontsize=scaled_title_fontsize)
     axs[2].axis('off')
 
     plt.tight_layout()

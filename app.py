@@ -6,11 +6,12 @@ from src.config import (
     DEFAULT_IMAGE_URL, DEFAULT_CHUNK_W, DEFAULT_CHUNK_H,
     SAMPLE_IMAGES_DATA, COLOR_EFFECTS, DEFAULT_COLOR_EFFECT,
     DEFAULT_BRIGHTNESS, DEFAULT_CONTRAST, DEFAULT_SHOW_GUIDELINES,
-    GUIDELINE_COLORS, DEFAULT_GUIDELINE_COLOR_NAME
+    GUIDELINE_COLORS, DEFAULT_GUIDELINE_COLOR_NAME, OUTPUT_IMAGE_WIDTH_IN_PIXELS, MIN_VALID_OUTPUT_WIDTH
 )
 
 sample_image_choices = [f"{item['name']} - {item['description']}" for item in SAMPLE_IMAGES_DATA]
 
+# FIXME: Under some conditions output is updated multiple times (on init and reset).
 # TODO: add another shredding level (making 4x4 image), recursion?
 # TODO: padding does not look good, it creates pixel stretching artefacts on the edges.
 #       As a solution, mirror the same amount of pixes as the offset instead of repeating last pixel.
@@ -60,8 +61,14 @@ def run_app():
                     value=DEFAULT_GUIDELINE_COLOR_NAME,
                     scale=3
                 )
+                input_field_output_width = gr.Number(
+                    label="Output Image Width (px)",
+                    value=OUTPUT_IMAGE_WIDTH_IN_PIXELS,
+                    precision=0,
+                    minimum=MIN_VALID_OUTPUT_WIDTH
+                )
 
-        output_image_component = gr.Image(type='pil', label='Result', format='png')
+        output_image_component = gr.Image(type='pil', show_label=False, format='png')
 
         with gr.Row():
             input_button_reset_to_defaults = gr.Button("Reset to defaults")
@@ -78,13 +85,13 @@ def run_app():
         input_fields = [
             input_field_url, input_slider_chunk_w, input_slider_chunk_h,
             input_radio_color_effect, input_slider_brightness, input_slider_contrast,
-            input_checkbox_show_guidelines, input_radio_guideline_color
+            input_checkbox_show_guidelines, input_radio_guideline_color, input_field_output_width
         ]
 
         # Registering change events
         for input_component in [
             input_field_url, input_radio_color_effect,
-            input_checkbox_show_guidelines, input_radio_guideline_color
+            input_checkbox_show_guidelines, input_radio_guideline_color, input_field_output_width
         ]:
             input_component.change(
                 fn=on_any_input_change,
@@ -105,25 +112,25 @@ def run_app():
 
         input_button_reset_to_defaults.click(
             fn=clear_inputs_outputs,
-            inputs=None,
+            inputs=[input_field_output_width],
             outputs=[
                 input_field_url, input_slider_chunk_w, input_slider_chunk_h,
                 input_radio_color_effect, input_slider_brightness, input_slider_contrast,
                 input_checkbox_show_guidelines, input_radio_guideline_color,
-                output_image_component, input_dropdown_sample_images
+                output_image_component, input_dropdown_sample_images, input_field_output_width
             ]
         )
 
         demo.load(
             fn=load_initial_image,
-            inputs=None,
+            inputs=[input_field_output_width],
             outputs=output_image_component
         )
 
     demo.launch()
 
 
-def load_initial_image():
+def load_initial_image(input_field_output_width):
     _guideline_color_rgb = np.array(GUIDELINE_COLORS[DEFAULT_GUIDELINE_COLOR_NAME], dtype=np.uint8)
     return process_image(
         url=DEFAULT_IMAGE_URL,
@@ -134,11 +141,12 @@ def load_initial_image():
         contrast_factor=DEFAULT_CONTRAST,
         show_guidelines=DEFAULT_SHOW_GUIDELINES,
         guideline_color_rgb_array=_guideline_color_rgb,
+        output_image_width=input_field_output_width,
         source='Initial Load'
     )
 
 
-def clear_inputs_outputs():
+def clear_inputs_outputs(input_field_output_width):
     _default_choice_str = set_default_choice_str()
     guideline_color_rgb = np.array(GUIDELINE_COLORS[DEFAULT_GUIDELINE_COLOR_NAME], dtype=np.uint8)
     image = process_image(
@@ -150,13 +158,14 @@ def clear_inputs_outputs():
         contrast_factor=DEFAULT_CONTRAST,
         show_guidelines=DEFAULT_SHOW_GUIDELINES,
         guideline_color_rgb_array=guideline_color_rgb,
+        output_image_width=input_field_output_width,
         source='Clear Button'
     )
     return (
         DEFAULT_IMAGE_URL, DEFAULT_CHUNK_W, DEFAULT_CHUNK_H,
         DEFAULT_COLOR_EFFECT, DEFAULT_BRIGHTNESS, DEFAULT_CONTRAST,
         DEFAULT_SHOW_GUIDELINES, DEFAULT_GUIDELINE_COLOR_NAME,
-        image, _default_choice_str
+        image, _default_choice_str, OUTPUT_IMAGE_WIDTH_IN_PIXELS
     )
 
 
@@ -167,10 +176,10 @@ def update_url_from_sample(selected_choice_str):
     return DEFAULT_IMAGE_URL, DEFAULT_BRIGHTNESS, DEFAULT_CONTRAST, DEFAULT_SHOW_GUIDELINES, DEFAULT_GUIDELINE_COLOR_NAME
 
 
-def on_any_input_change(url, cw, ch, effect, brightness, contrast, guidelines, guideline_color_name):
+def on_any_input_change(url, cw, ch, effect, brightness, contrast, guidelines, guideline_color_name, output_width):
     guideline_color_rgb = np.array(GUIDELINE_COLORS.get(
         guideline_color_name, GUIDELINE_COLORS[DEFAULT_GUIDELINE_COLOR_NAME]), dtype=np.uint8)
-    return process_image(url, cw, ch, effect, brightness, contrast, guidelines, guideline_color_rgb, source='User Input')
+    return process_image(url, cw, ch, effect, brightness, contrast, guidelines, guideline_color_rgb, output_width, source='User Input')
 
 
 def set_default_choice_str():
