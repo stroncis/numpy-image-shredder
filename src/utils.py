@@ -10,13 +10,6 @@ from PIL import Image, UnidentifiedImageError
 from .config import OUTPUT_IMAGE_DPI, OUTPUT_IMAGE_ASPECT_RATIO, OUTPUT_IMAGE_WIDTH_IN_PIXELS, MIN_VALID_OUTPUT_WIDTH, DEFAULT_TITLE_FONT_SIZE
 from src.shredder import shred_image
 
-# import matplotlib
-# This is commented in case plot rendering heisenbug would surface.
-# Agg is a non-interactive backend that can only write to files. Running in this mode
-# should prevent from crashing when Gradio avoiding UI blocking runs `process_image`
-# on a separate, worker thread. Thus Matplotlib server side is separated from the UI thread.
-# matplotlib.use('Agg')  # This must be called before `import matplotlib.pyplot as plt`
-
 
 def get_timestamp():  # Helper for logging
     return datetime.datetime.now().strftime('%H:%M:%S.%f')[:-3]
@@ -54,21 +47,27 @@ def pad_image_to_fit_chunks(img, chunk_width, chunk_height):
     return padded_img
 
 
-def process_image(url, chunk_w, chunk_h, color_effect, brightness_offset, contrast_factor, show_guidelines, guideline_color_rgb_array, output_image_width, source=None):
+def process_image(
+    base_img_array,
+    chunk_w,
+    chunk_h,
+    color_effect,
+    brightness_offset,
+    contrast_factor,
+    show_guidelines,
+    guideline_color_rgb_array,
+    output_image_width,
+    source=None
+):
     if output_image_width is None or not isinstance(output_image_width, (int, float)) or output_image_width < MIN_VALID_OUTPUT_WIDTH:
         raise gr.Error(
             f"Output image width must be a positive number. Received: '{output_image_width}'. Please enter a valid width (e.g., >= {MIN_VALID_OUTPUT_WIDTH}px)."
         )
 
-    # if source:
-        # print(f"{get_timestamp()} Processing image invoked from {source}")
+    if source:
+        print(f"{get_timestamp()} Processing image invoked from {source}")
 
-    try:
-        img_array = download_image(url)
-    except (ValueError, UnidentifiedImageError) as e:
-        raise gr.Error(str(e))
-
-    padded_img = pad_image_to_fit_chunks(img_array, chunk_w, chunk_h)
+    padded_img = pad_image_to_fit_chunks(base_img_array, chunk_w, chunk_h)
     img_after_effects = apply_color_effect(padded_img, color_effect, brightness_offset, contrast_factor)
 
     vertical_shred, final_shred = shred_image(img_after_effects, chunk_w, chunk_h)
@@ -95,6 +94,9 @@ def process_image(url, chunk_w, chunk_h, color_effect, brightness_offset, contra
     if output_image_width < MIN_VALID_OUTPUT_WIDTH:
         scaled_title_fontsize = DEFAULT_TITLE_FONT_SIZE
     else:
+        reference_width = OUTPUT_IMAGE_WIDTH_IN_PIXELS if OUTPUT_IMAGE_WIDTH_IN_PIXELS > 0 else output_image_width
+        if reference_width == 0:
+            reference_width = 800  # Failsafe
         scaled_title_fontsize = (output_image_width / OUTPUT_IMAGE_WIDTH_IN_PIXELS) * DEFAULT_TITLE_FONT_SIZE
     scaled_title_fontsize = np.clip(scaled_title_fontsize, 7, 72)  # Clamping font size to a reasonable range
 
