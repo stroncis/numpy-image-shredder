@@ -15,18 +15,18 @@ DEFAULT_SAMPLE_IMAGES_DATA = [
         "license": "Public domain (Stockcake)"
     },
     {
-        "name": "Prismatic Color Burst",
-        "description": "good for color manipulation",
-        "base_url": "https://stockcake.com/i/prismatic-color-burst_1781331_1235280",
-        "image_url": "https://images.stockcake.com/public/8/1/b/81bc82ea-a52f-42c4-8f70-7f4fbd519d1a/prismatic-color-burst-stockcake.jpg",
-        "license": "Public domain (Stockcake)"
+        "name": "Stefan Sagmeister's book cover",
+        "description": "Apply 'Swap R/G Channels' or 'Red Channel Only' for the best effect",
+        "base_url": "https://www.leboncoin.fr/ad/livres/2856453141",
+        "image_url": "https://img.leboncoin.fr/api/v1/lbcpb1/images/25/04/85/25048572a1c62486c5f84c01a3386c59b2b23c61.jpg?rule=ad-large",
+        "license": "Unknown"
     },
     {
-        "name": "Bubbling Color Symphony",
-        "description": "circles to squares effect",
-        "base_url": "https://stockcake.com/i/bubbling-color-symphony_1567759_1189604",
-        "image_url": "https://images.stockcake.com/public/7/3/d/73d7cc7e-b051-4ab4-82c9-ab6d125d0964/bubbling-color-symphony-stockcake.jpg",
-        "license": "Public domain (Stockcake)"
+        "name": "This Person Does Not Exist",
+        "description": "There's no escape!",
+        "base_url": "https://thispersondoesnotexist.com/",
+        "image_url": "https://thispersondoesnotexist.com/",
+        "license": "Unknown"
     },
     {
         "name": "Botanical Leaf Tapestry",
@@ -43,11 +43,18 @@ DEFAULT_SAMPLE_IMAGES_DATA = [
         "license": "CC BY-SA 3.0 (Wikimedia)"
     },
     {
-        "name": "Stefan Sagmeister's book cover",
-        "description": "Apply 'Swap R/G Channels' or 'Red Channel Only' for the best effect",
-        "base_url": "https://www.leboncoin.fr/ad/livres/2856453141",
-        "image_url": "https://img.leboncoin.fr/api/v1/lbcpb1/images/25/04/85/25048572a1c62486c5f84c01a3386c59b2b23c61.jpg?rule=ad-large",
-        "license": "Unknown"
+        "name": "Prismatic Color Burst",
+        "description": "good for color manipulation",
+        "base_url": "https://stockcake.com/i/prismatic-color-burst_1781331_1235280",
+        "image_url": "https://images.stockcake.com/public/8/1/b/81bc82ea-a52f-42c4-8f70-7f4fbd519d1a/prismatic-color-burst-stockcake.jpg",
+        "license": "Public domain (Stockcake)"
+    },
+    {
+        "name": "Bubbling Color Symphony",
+        "description": "circles to squares effect",
+        "base_url": "https://stockcake.com/i/bubbling-color-symphony_1567759_1189604",
+        "image_url": "https://images.stockcake.com/public/7/3/d/73d7cc7e-b051-4ab4-82c9-ab6d125d0964/bubbling-color-symphony-stockcake.jpg",
+        "license": "Public domain (Stockcake)"
     }
 ]
 
