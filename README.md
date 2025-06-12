@@ -119,7 +119,7 @@ img_array = np.array([
       ![Output with multiple effects](assets/images/result_fx_example_2.png)
     *   Output view with slicing guidelines, helps visualising action results:<br>
       ![Output with guidelines](assets/images/result_guidelines_example.png)
-    *   Output using [thispersondoesnotexist.com](https://thispersondoesnotexist.com/)'s `StyleGAN2` face generator. This can en up as a comical lo-fi character or plain horror, use with discretion. No person's feelings has been harmed.<br>
+    *   Output using [thispersondoesnotexist.com](https://thispersondoesnotexist.com/)'s `StyleGAN2` face generator. This can en up as a comical lo-fi character or plain horror, use with discretion. No person's feelings has been harmed. Smack **Reload image** button to cease current person's non existence.<br>
       ![Output with guidelines](assets/images/result_thispersondoesnotexist.png)
 
       
