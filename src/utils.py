@@ -18,6 +18,10 @@ from src.shredder import shred_image
 # matplotlib.use('Agg')  # This must be called before `import matplotlib.pyplot as plt`
 
 
+def get_timestamp():  # Helper for logging
+    return datetime.datetime.now().strftime('%H:%M:%S.%f')[:-3]
+
+
 def download_image(url):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
@@ -57,7 +61,7 @@ def process_image(url, chunk_w, chunk_h, color_effect, brightness_offset, contra
         )
 
     # if source:
-        # print(f"{datetime.datetime.now().strftime('%H:%M:%S')} Processing image invoked from {source}")
+        # print(f"{get_timestamp()} Processing image invoked from {source}")
 
     try:
         img_array = download_image(url)
