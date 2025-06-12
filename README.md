@@ -46,7 +46,7 @@ Optionally added some extra features, numpy processing for color channels.
     *   Reset inputs to their default values.
     *   Image re-processing automatically on any input change (chunk size changes update results only on release).
     *   Slicing guidelines, helping identify chunk edges.
-    *   Custom output image width in pixels (subplot title fonts scaled appropriately)
+    *   Custom output image width in pixels (subplot title fonts scaled accordingly) for exporting
 
 ## How It Works
 
@@ -113,12 +113,16 @@ img_array = np.array([
     *   This figure is saved to an in-memory buffer and converted to a PIL Image, which is then displayed in the Gradio UI.
     *   Output view for seamless tile image:<br>
       ![Output view](assets/images/result_example.png)
-    *   Output view with color alteration - swap red and green channels:<br>
+    *   Output view with color alteration - swap red and green channels, can reveal some hidden truth:<br>
       ![Output with effect](assets/images/result_fx_example_1.png)
-    *   Output view with multiple effects - red channel only, brightness, contrast:<br>
+    *   Output view with multiple effects - leaving red channel only and popping brightness with contrast:<br>
       ![Output with multiple effects](assets/images/result_fx_example_2.png)
-    *   Output view with slicing guidelines:<br>
+    *   Output view with slicing guidelines, helps visualising action results:<br>
       ![Output with guidelines](assets/images/result_guidelines_example.png)
+    *   Output using [thispersondoesnotexist.com](https://thispersondoesnotexist.com/)'s `StyleGAN2` face generator. This can en up as a comical lo-fi character or plain horror, use with discretion. No person's feelings has been harmed.<br>
+      ![Output with guidelines](assets/images/result_thispersondoesnotexist.png)
+
+      
 
 ## Technologies Used
 
