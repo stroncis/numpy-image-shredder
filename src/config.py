@@ -1,6 +1,6 @@
 import os
 
-from .image_updater import get_updated_sample_images
+from .sample_image_metadata import DEFAULT_SAMPLE_IMAGES_DATA  # from .image_updater import get_updated_sample_images
 
 # Output image width in pixels
 OUTPUT_IMAGE_WIDTH_IN_PIXELS = 1800
@@ -18,7 +18,7 @@ DEFAULT_TITLE_FONT_SIZE = 12
 DEFAULT_CHUNK_W = 16
 DEFAULT_CHUNK_H = 16
 
-DEFAULT_SHOW_GUIDELINES = False 
+DEFAULT_SHOW_GUIDELINES = False
 GUIDELINE_COLORS = {
     "Red": [255, 128, 0],
     "Green": [0, 255, 0],
@@ -31,10 +31,11 @@ GUIDELINE_COLORS = {
 }
 DEFAULT_GUIDELINE_COLOR_NAME = "Red"
 
-SAMPLE_IMAGES_DATA = get_updated_sample_images()
+SAMPLE_IMAGES_DATA = DEFAULT_SAMPLE_IMAGES_DATA  # get_updated_sample_images()
 
 if SAMPLE_IMAGES_DATA:
-    DEFAULT_IMAGE_URL = SAMPLE_IMAGES_DATA[0]["image_url"]
+    first_item = SAMPLE_IMAGES_DATA[0]
+    DEFAULT_IMAGE_URL = first_item.get("image_url") or first_item.get("base_url")
 else:
     DEFAULT_IMAGE_URL = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Yellow_flowers_a.jpg/960px-Yellow_flowers_a.jpg"
 

@@ -2,6 +2,7 @@ import gradio as gr
 import numpy as np
 
 from src.utils import process_image, get_timestamp, download_image
+from src.image_updater import get_image_url_from_item
 from src.config import (
     DEFAULT_IMAGE_URL, DEFAULT_CHUNK_W, DEFAULT_CHUNK_H,
     SAMPLE_IMAGES_DATA, COLOR_EFFECTS, DEFAULT_COLOR_EFFECT,
@@ -10,7 +11,7 @@ from src.config import (
 )
 
 # TODO: refactor image handling to OOP.
-# TODO: local image loading for offline use.
+# TODO: local image loading (still implies fetching as the UI is Browser based) for offline use.
 # TODO: multiple shredding levels, thus making output cloning to 4x4 or 8x8 grid. For true breeders!
 # TODO: export effects settings to json file, so that it can be loaded later.
 # TODO: padding does not look good, it creates pixel stretching artefacts on the edges.
@@ -190,7 +191,8 @@ def update_url_from_sample(selected_choice_str):
 def set_default_choice_str():
     _default_choice_str = ""
     for item in SAMPLE_IMAGES_DATA:
-        if item["image_url"] == DEFAULT_IMAGE_URL:
+        # if item["image_url"] == DEFAULT_IMAGE_URL:
+        if item.get("image_url") == DEFAULT_IMAGE_URL:
             _default_choice_str = f"{item['name']} - {item['description']}"
             break
     return _default_choice_str if _default_choice_str else (sample_image_choices[0] if sample_image_choices else "")
@@ -220,27 +222,42 @@ def _load_or_use_cached_and_process(
     """
     if batch_update_active:
         print(f"{get_timestamp()} Skipping _load_or_use_cached_and_process due to batch update.")
-        return gr.skip(), gr.skip(), gr.skip()  # No changes
+        return (gr.skip(),) * 3  # No changes
 
     image_array_to_process = None
     new_cached_url = current_cached_url
     new_cached_array = current_cached_array
 
-    if force_download or url_to_process != current_cached_url or current_cached_array is None:
-        print(f"{get_timestamp()} Downloading image from URL: {url_to_process}")
+    final_url_to_process = url_to_process
+    print(f"{get_timestamp()} force_download {force_download}, source_log_msg {source_log_msg}, Processing image from URL: {url_to_process}")
+
+    if force_download and source_log_msg in ["Update Button", "Initial Load"]:
+        for item in SAMPLE_IMAGES_DATA:
+            item_url = item.get("image_url") or item.get("base_url")
+            if item_url == url_to_process:
+                if item.get('scraping') or item.get('force_url_update'):
+                    print(f"{get_timestamp()} Getting fresh URL for '{item['name']}'")
+                    fresh_url = get_image_url_from_item(item)
+                    if fresh_url:
+                        final_url_to_process = fresh_url
+                        print(f"{get_timestamp()} Using fresh URL: {final_url_to_process}")
+                break
+
+    if force_download or final_url_to_process != current_cached_url or current_cached_array is None:
+        print(f"{get_timestamp()} Downloading image from URL: {final_url_to_process}")  # Use final_url_to_process
         try:
-            image_array_to_process = download_image(url_to_process)
+            image_array_to_process = download_image(final_url_to_process)  # Use final_url_to_process
             new_cached_array = image_array_to_process
-            new_cached_url = url_to_process
+            new_cached_url = final_url_to_process  # Cache the final URL that was actually used
         except Exception as e:
             gr.Error(f"Error downloading image: {str(e)}")
-            if url_to_process == current_cached_url and current_cached_array is not None:
-                print(f"{get_timestamp()} Download failed, using previously cached image for {url_to_process}")
+            if final_url_to_process == current_cached_url and current_cached_array is not None:
+                print(f"{get_timestamp()} Download failed, using previously cached image for {final_url_to_process}")
                 image_array_to_process = current_cached_array
             else:
-                return None, current_cached_array, current_cached_url  # Removing image, keeping cache
+                return None, current_cached_array, current_cached_url
     else:
-        print(f"{get_timestamp()} Using cached image for URL: {url_to_process}")
+        print(f"{get_timestamp()} Using cached image for URL: {final_url_to_process}")
         image_array_to_process = current_cached_array
 
     if image_array_to_process is None:
@@ -263,7 +280,7 @@ def on_param_change_handler(
     """
     if current_cached_array is None:
         gr.Warning("Please load an image first using the URL field and 'Update Image' button.")
-        return gr.skip(), gr.skip(), gr.skip()
+        return (gr.skip(),) * 3
 
     return _load_or_use_cached_and_process(
         current_cached_url, current_cached_url, current_cached_array,
@@ -275,7 +292,7 @@ def on_param_change_handler(
 
 def handle_sample_image_selection_and_load(
     selected_choice_str,
-    cw, ch, effect, guidelines, guide_color_name, out_width,
+    cw, ch, effect, _guidelines, _guide_color_name, out_width,
     batch_update_active_flag
 ):
     """
@@ -284,15 +301,32 @@ def handle_sample_image_selection_and_load(
     """
     if batch_update_active_flag:
         print(f"{get_timestamp()} Skipping sample selection due to batch update.")
-        return gr.skip(), gr.skip(), gr.skip(), gr.skip(), gr.skip(), gr.skip(), gr.skip(), gr.skip()
+        return (gr.skip(),) * 8
 
-    new_url, new_brightness, new_contrast, new_show_guidelines, new_guideline_color = \
-        update_url_from_sample(selected_choice_str)
+    selected_item = None
+    for item in SAMPLE_IMAGES_DATA:
+        if f"{item['name']} - {item['description']}" == selected_choice_str:
+            selected_item = item
+            break
+
+    if not selected_item:
+        gr.Warning(f"Could not find sample image: {selected_choice_str}")
+        return (gr.skip(),) * 8
+
+    image_url = get_image_url_from_item(selected_item)
+    if not image_url:
+        gr.Error(f"Could not get image URL for '{selected_item['name']}'")
+        return (gr.skip(),) * 8
+
+    new_url = image_url
+    new_brightness = DEFAULT_BRIGHTNESS
+    new_contrast = DEFAULT_CONTRAST
+    new_show_guidelines = DEFAULT_SHOW_GUIDELINES
+    new_guideline_color = DEFAULT_GUIDELINE_COLOR_NAME
 
     processed_img, final_cached_array, final_cached_url = _load_or_use_cached_and_process(
         new_url,
-        # Clearing cache states to force download
-        gr.State(None), gr.State(None),
+        gr.State(None), gr.State(None),  # Clearing cache states to force download
         cw, ch, effect, new_brightness, new_contrast,
         new_show_guidelines, new_guideline_color, out_width,
         True, False,  # force_download=True, batch_active=False
