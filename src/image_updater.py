@@ -57,6 +57,7 @@ DEFAULT_SAMPLE_IMAGES_DATA = [
         "license": "Public domain (Stockcake)"
     }
 ]
+from .sample_image_metadata import DEFAULT_SAMPLE_IMAGES_DATA
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(PROJECT_ROOT, 'data')
