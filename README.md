@@ -71,7 +71,11 @@ img_array = np.array([
 ### Actions:
 1.  **Image Download**: The application fetches an image from the provided URL using the `requests` library. A `User-Agent` header is used to mimic a browser request.
 
-    Initially application provides hand-picked image drop-down list. Images (with appropriate licenses) are fetched from a image stock platform and wikimedia. Image stock platform constantly updates hashes in direct image urls so they should be checked and updated on each launch. To make it minimal, only `requests` library used with regex selector. There are some protections from automated browsing, so to simulate a user browser needed to add multiple headers which are sent usually by browsers and to unpack `response.text` added `brotli` library as `requests` does not include it.
+    Initially application provides hand-picked image drop-down list. Images (with appropriate licenses) are fetched from a different sources. List items with "1️⃣" are single images and "🔄" means they are random images and can be randomized by pressing button "Reloadm image".
+    
+    Image stock platform StockCake constantly updates hashes in direct image urls so they should be checked and updated on each launch. To make it minimal, only `requests` library used with regex selector. There are some protections from automated browsing, so to simulate a user browser needed to add multiple headers which are sent usually by browsers and to unpack `response.text` added `brotli` library as `requests` does not include it.
+
+    Scraping selectors `image_selector_regex` are included in sample image metadata and can be utilized for any source, which returns SSR HTML with an image element. For images, where scraped URL needs parsing, instructions `url_transform_regex` and `url_transform_replacement` also could be added to metadata.
 
 2.  **Image Preparation**:
     *   The downloaded image is converted to a PIL Image object and then to a NumPy array.
