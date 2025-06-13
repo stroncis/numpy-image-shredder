@@ -4,14 +4,27 @@ from io import BytesIO
 import requests
 import numpy as np
 import gradio as gr
-import matplotlib.pyplot as plt
+
 from PIL import Image, UnidentifiedImageError
 
-from .config import OUTPUT_IMAGE_DPI, OUTPUT_IMAGE_ASPECT_RATIO, OUTPUT_IMAGE_WIDTH_IN_PIXELS, MIN_VALID_OUTPUT_WIDTH, DEFAULT_TITLE_FONT_SIZE
 from src.shredder import shred_image
+from .config import OUTPUT_IMAGE_DPI, OUTPUT_IMAGE_ASPECT_RATIO, OUTPUT_IMAGE_WIDTH_IN_PIXELS, MIN_VALID_OUTPUT_WIDTH, DEFAULT_TITLE_FONT_SIZE
+
+# fmt: off
+import matplotlib
+# Fix for a threading issue with Matplotlib on macOS.
+# It's heisenbug-like, causes crashes so randomly, that impossible to reproduce.
+# Gradio runs event handlers in background threads for responsiveness, though
+# Matplotlib's GUI backend on macOS requires the main thread for creating windows/figures
+# and plt.subplots() call is moved to a background thread in some cases.
+# Anti-Grain Geometry backend is thread-safe and designed for server/web applications
+# It generates images directly to memory/files without creating GUI windows
+matplotlib.use('Agg')  # Set non-interactive backend BEFORE importing pyplot
+import matplotlib.pyplot as plt
+# fmt: on
 
 
-def get_timestamp():  # Helper for logging
+def get_timestamp():
     return datetime.datetime.now().strftime('%H:%M:%S.%f')[:-3]
 
 
