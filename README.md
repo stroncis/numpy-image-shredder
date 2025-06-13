@@ -75,7 +75,7 @@ img_array = np.array([
     
     Image stock platform StockCake constantly updates hashes in direct image urls so they should be checked and updated on each launch. To make it minimal, only `requests` library used with regex selector. There are some protections from automated browsing, so to simulate a user browser needed to add multiple headers which are sent usually by browsers and to unpack `response.text` added `brotli` library as `requests` does not include it.
 
-    Scraping selectors `image_selector_regex` are included in sample image metadata and can be utilized for any source, which returns SSR HTML with an image element. For images, where scraped URL needs parsing, instructions `url_transform_regex` and `url_transform_replacement` also could be added to metadata.
+    Scraping selectors `image_selector_regex` are included in sample image metadata and can be utilized for any source, which returns SSR HTML with an image element or APIs returning JSON. For images, where scraped URL needs parsing, instructions `url_transform_regex` and `url_transform_replacement` also could be added to metadata.
 
 2.  **Image Preparation**:
     *   The downloaded image is converted to a PIL Image object and then to a NumPy array.
