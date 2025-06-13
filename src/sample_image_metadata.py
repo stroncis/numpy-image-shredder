@@ -3,15 +3,15 @@
 # Some image URLs require parsing or transformation before usage, parsing regex instructions also included.
 DEFAULT_SAMPLE_IMAGES_DATA = [
     {
-        "name": "1️⃣\u2003Vibrant Flower Collection",
-        "description": "blossom boxes multiplied",
-        "base_url": "https://stockcake.com/i/vibrant-flower-collection_1061865_1157624",
-        "image_url": "https://images.stockcake.com/public/2/8/c/28cbee0c-98af-4fd4-98f8-8870ba7b532c/vibrant-flower-collection-stockcake.jpg",
-        "license": "Public domain (Stockcake)",
+        "name": "🔄\u2003Let's breed smarties",
+        "description": "Good boy/girl alert!",
+        "base_url": "https://dog.ceo/api/breeds/image/random",
+        "license": "Public domain (Dog CEO)",
+        "force_url_update": True,
         "scraping": {
-            "image_selector_regex": "<picture\\s+id=\"mainImageContainer\">.*?<img.*?src=\"([^\"]+)\".*?</picture>",
-            "url_transform_regex": "_large(/[^/]+?stockcake\\.jpg)",
-            "url_transform_replacement": "\\1"
+            "image_selector_regex": "\"message\":\"([^\"]+)\"",  # This API returns JSON with an image URL
+            "url_transform_regex": "\\\\/",  # Wipe escapes
+            "url_transform_replacement": "/"
         }
     },
     {
@@ -39,7 +39,17 @@ DEFAULT_SAMPLE_IMAGES_DATA = [
         "name": "1️⃣\u2003Botanical Leaf Tapestry",
         "description": "seamless tapestry",
         "base_url": "https://stockcake.com/i/botanical-leaf-tapestry_2190014_1262920",
-        "image_url": "https://images.stockcake.com/public/5/f/1/5f13c92a-353f-435d-b179-b839134d3dfe/botanical-leaf-tapestry-stockcake.jpg",
+        "license": "Public domain (Stockcake)",
+        "scraping": {
+            "image_selector_regex": "<picture\\s+id=\"mainImageContainer\">.*?<img.*?src=\"([^\"]+)\".*?</picture>",
+            "url_transform_regex": "_large(/[^/]+?stockcake\\.jpg)",
+            "url_transform_replacement": "\\1"
+        }
+    },
+    {
+        "name": "1️⃣\u2003Vibrant Flower Collection",
+        "description": "multiply blossom boxes",
+        "base_url": "https://stockcake.com/i/vibrant-flower-collection_1061865_1157624",
         "license": "Public domain (Stockcake)",
         "scraping": {
             "image_selector_regex": "<picture\\s+id=\"mainImageContainer\">.*?<img.*?src=\"([^\"]+)\".*?</picture>",
