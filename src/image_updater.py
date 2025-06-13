@@ -5,58 +5,8 @@ import time
 import random
 import requests
 
-# Redundant, but default data in case the JSON file doesn't exist or is corrupted
-DEFAULT_SAMPLE_IMAGES_DATA = [
-    {
-        "name": "Vibrant Flower Collection",
-        "description": "blossom boxes multiplied",
-        "base_url": "https://stockcake.com/i/vibrant-flower-collection_1061865_1157624",
-        "image_url": "https://images.stockcake.com/public/2/8/c/28cbee0c-98af-4fd4-98f8-8870ba7b532c/vibrant-flower-collection-stockcake.jpg",
-        "license": "Public domain (Stockcake)"
-    },
-    {
-        "name": "Stefan Sagmeister's book cover",
-        "description": "Apply 'Swap R/G Channels' or 'Red Channel Only' for the best effect",
-        "base_url": "https://www.leboncoin.fr/ad/livres/2856453141",
-        "image_url": "https://img.leboncoin.fr/api/v1/lbcpb1/images/25/04/85/25048572a1c62486c5f84c01a3386c59b2b23c61.jpg?rule=ad-large",
-        "license": "Unknown"
-    },
-    {
-        "name": "This Person Does Not Exist",
-        "description": "There's no escape!",
-        "base_url": "https://thispersondoesnotexist.com/",
-        "image_url": "https://thispersondoesnotexist.com/",
-        "license": "Unknown"
-    },
-    {
-        "name": "Botanical Leaf Tapestry",
-        "description": "seamless tapestry",
-        "base_url": "https://stockcake.com/i/botanical-leaf-tapestry_2190014_1262920",
-        "image_url": "https://images.stockcake.com/public/5/f/1/5f13c92a-353f-435d-b179-b839134d3dfe/botanical-leaf-tapestry-stockcake.jpg",
-        "license": "Public domain (Stockcake)"
-    },
-    {
-        "name": "Yellow Flower Matrix",
-        "description": "great multiplication effect",
-        "base_url": "https://commons.wikimedia.org/wiki/File:Yellow_flowers_a.jpg",
-        "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Yellow_flowers_a.jpg/960px-Yellow_flowers_a.jpg",
-        "license": "CC BY-SA 3.0 (Wikimedia)"
-    },
-    {
-        "name": "Prismatic Color Burst",
-        "description": "good for color manipulation",
-        "base_url": "https://stockcake.com/i/prismatic-color-burst_1781331_1235280",
-        "image_url": "https://images.stockcake.com/public/8/1/b/81bc82ea-a52f-42c4-8f70-7f4fbd519d1a/prismatic-color-burst-stockcake.jpg",
-        "license": "Public domain (Stockcake)"
-    },
-    {
-        "name": "Bubbling Color Symphony",
-        "description": "circles to squares effect",
-        "base_url": "https://stockcake.com/i/bubbling-color-symphony_1567759_1189604",
-        "image_url": "https://images.stockcake.com/public/7/3/d/73d7cc7e-b051-4ab4-82c9-ab6d125d0964/bubbling-color-symphony-stockcake.jpg",
-        "license": "Public domain (Stockcake)"
-    }
-]
+from urllib.parse import urljoin
+
 from .sample_image_metadata import DEFAULT_SAMPLE_IMAGES_DATA
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -85,7 +35,7 @@ def _save_data_to_json(data):
         print(f"Warning: Could not write to {JSON_FILE_PATH}.")
 
 
-# Session object to persist headers and cookies
+# Session object for a full browser-like impression
 session = requests.Session()
 session.headers.update({
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
@@ -103,7 +53,20 @@ session.headers.update({
 })
 
 
-def _fetch_stockcake_full_res_url(base_url):
+def _fetch_image_url_with_regex(base_url, scraping_config):
+    """
+    Fetches image URL using regex patterns from scraping config.
+
+    Args:
+        base_url (str): The page URL to scrape
+        scraping_config (dict): Configuration containing:
+            - image_selector_regex: Pattern to find image URL in HTML
+            - url_transform_regex: Optional pattern to transform found URL
+            - url_transform_replacement: Optional replacement for transform
+
+    Returns:
+        str or None: The extracted/transformed image URL, or None if failed
+    """
     try:
         response = session.get(base_url, timeout=15)
         response.raise_for_status()
@@ -116,46 +79,54 @@ def _fetch_stockcake_full_res_url(base_url):
             print(f"Warning: No content returned for {base_url}.")
             return None
 
-        # --- Debugging ---
-        # print(f"Info: First 500 chars of content from {base_url}:\n{html_content[:500]}")
+        image_selector_regex = scraping_config.get('image_selector_regex')
+        if not image_selector_regex:
+            print(f"Warning: No image_selector_regex provided for {base_url}")
+            return None
 
-        # safe_filename_part = re.sub(r'[^a-zA-Z0-9_-]', '_', base_url.split('/')[-1])
-        # dump_filename = os.path.join(DATA_DIR, f"dump_{safe_filename_part}.html")
-        # os.makedirs(DATA_DIR, exist_ok=True)
-        # try:
-        #     with open(dump_filename, 'w', encoding='utf-8', errors='replace') as f_dump:
-        #         f_dump.write(html_content)
-        #     print(f"Info: Saved content dump to {dump_filename}")
-        # except Exception as e_dump:
-        #     print(f"Error: Could not save dump file {dump_filename}: {e_dump}")
-        # --- End Debugging ---
+        match = re.search(image_selector_regex, html_content, re.DOTALL | re.IGNORECASE)
+        if not match:
+            print(f"Warning: Could not find image URL using regex pattern for {base_url}")
+            return None
 
-        # Very brittle!
-        match = re.search(
-            r'<picture\s+id="mainImageContainer">.*?<img.*?src="([^"]+)".*?</picture>',
-            html_content,
-            re.DOTALL | re.IGNORECASE
-        )
-        if match:
-            low_res_url = match.group(1)
-            full_res_url = re.sub(r'_large(/[^/]+?stockcake\.jpg)', r'\1', low_res_url)
-            if full_res_url == low_res_url:
-                full_res_url = low_res_url.replace("_large.", ".")
+        found_url = match.group(1)
 
-            if full_res_url.startswith("https") and "stockcake.jpg" in full_res_url:
-                return full_res_url
-            else:
-                print(f"Warning: Extracted URL for {base_url} doesn't look right: {full_res_url}")
+        if found_url.startswith('//'):
+            found_url = 'https:' + found_url
+        elif found_url.startswith('/'):
+            found_url = urljoin(base_url, found_url)
+        elif not found_url.startswith(('http://', 'https://')):
+            found_url = urljoin(base_url, found_url)
+
+        url_transform_regex = scraping_config.get('url_transform_regex')
+        url_transform_replacement = scraping_config.get('url_transform_replacement')
+
+        if url_transform_regex and url_transform_replacement:
+            transformed_url = re.sub(url_transform_regex, url_transform_replacement, found_url)
+            if transformed_url != found_url:
+                print(f"Info: Transformed URL from {found_url} to {transformed_url}")
+                found_url = transformed_url
+
+        if found_url.startswith(('http://', 'https://')) and any(ext in found_url.lower() for ext in ['.jpg', '.jpeg', '.png', '.webp']):
+            return found_url
         else:
-            print(f"Warning: Could not find mainImageContainer or img src for {base_url}")
+            print(f"Warning: Extracted URL for {base_url} doesn't look like a valid image URL: {found_url}")
+            return None
+
     except requests.RequestException as e:
         print(f"Warning: Request failed for {base_url}: {e}")
+    except re.error as e:
+        print(f"Warning: Regex error for {base_url}: {e}")
     except Exception as e:
         print(f"Warning: An unexpected error occurred while fetching/parsing {base_url}: {e}")
+
     return None
 
 
 def _is_url_valid(image_url):
+    """Check if an image URL is accessible and returns a valid response."""
+    if not image_url:
+        return False
     try:
         response = requests.head(image_url, timeout=5, allow_redirects=True)
         return response.status_code == 200
@@ -163,12 +134,26 @@ def _is_url_valid(image_url):
         return False
 
 
+def _has_scraping_config(item):
+    """Check if an item has scraping configuration."""
+    scraping_config = item.get('scraping')
+    return (scraping_config and
+            isinstance(scraping_config, dict) and
+            scraping_config.get('image_selector_regex'))
+
+
 def get_updated_sample_images():
+    """
+    Load sample images and update any that have scraping configuration 
+    and invalid/missing image URLs.
+    """
     sample_images = _load_data_from_json()
     updated = False
+
     for i, item in enumerate(sample_images):
-        if "stockcake.com" in item.get("base_url", ""):
+        if _has_scraping_config(item):
             current_image_url = item.get("image_url")
+
             if not current_image_url or not _is_url_valid(current_image_url):
                 print(
                     f"Info: Current URL for '{item['name']}' is invalid or missing. Attempting to update from base_url: {item['base_url']}")
@@ -176,7 +161,8 @@ def get_updated_sample_images():
                 if i > 0:
                     time.sleep(random.uniform(1, 3))
 
-                new_url = _fetch_stockcake_full_res_url(item["base_url"])
+                new_url = _fetch_image_url_with_regex(item["base_url"], item["scraping"])
+
                 if new_url and new_url != current_image_url:
                     print(f"Info: Updated URL for '{item['name']}' to: {new_url}")
                     item["image_url"] = new_url
@@ -187,6 +173,7 @@ def get_updated_sample_images():
 
     if updated or not os.path.exists(JSON_FILE_PATH):
         _save_data_to_json(sample_images)
+
     return sample_images
 
 

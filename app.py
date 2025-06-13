@@ -9,12 +9,17 @@ from src.config import (
     GUIDELINE_COLORS, DEFAULT_GUIDELINE_COLOR_NAME, OUTPUT_IMAGE_WIDTH_IN_PIXELS, MIN_VALID_OUTPUT_WIDTH
 )
 
-sample_image_choices = [f"{item['name']} - {item['description']}" for item in SAMPLE_IMAGES_DATA]
-
-# TODO: add another shredding level (making 4x4 image), recursion?
+# TODO: refactor image handling to OOP.
+# TODO: local image loading for offline use.
+# TODO: multiple shredding levels, thus making output cloning to 4x4 or 8x8 grid. For true breeders!
+# TODO: export effects settings to json file, so that it can be loaded later.
 # TODO: padding does not look good, it creates pixel stretching artefacts on the edges.
 #       As a solution, mirror the same amount of pixes as the offset instead of repeating last pixel.
 # TODO: add "selector" entry to json, if selector is set, then it should scrape using that selector for image URL from the page.
+# TODO: add an histogram overlay to the output image.
+# TODO: scrape the page for all images, give a list of all larger than ???px images.
+
+sample_image_choices = [f"{item['name']} - {item['description']}" for item in SAMPLE_IMAGES_DATA]
 
 
 def run_app():
@@ -267,6 +272,7 @@ def on_param_change_handler(
         "Param Change"
     )
 
+
 def handle_sample_image_selection_and_load(
     selected_choice_str,
     cw, ch, effect, guidelines, guide_color_name, out_width,
@@ -297,6 +303,7 @@ def handle_sample_image_selection_and_load(
         processed_img, final_cached_array, final_cached_url
     )
 
+
 def clear_all_and_reload_default_action(batch_update_active_flag):
     """
     Reset all parameters to their defaults and reload the default image.
@@ -325,6 +332,7 @@ def clear_all_and_reload_default_action(batch_update_active_flag):
         processed_img,
         final_cached_array, final_cached_url
     )
+
 
 def initial_load_action():
     """
