@@ -31,7 +31,7 @@ DEFAULT_SAMPLE_IMAGES_DATA = [
     {
         "name": "🔄\u2003Lorem Picsum",
         "description": "Random photo from Picsum",
-        "base_url": "https://picsum.photos/1024",
+        "base_url": "https://picsum.photos/",
         "image_url": "https://picsum.photos/1024",
         "license": "Public domain (Picsum)"
     },
