@@ -98,6 +98,7 @@ def run_app():
         input_button_update_image.click(
             fn=_load_or_use_cached_and_process,
             inputs=[
+                input_dropdown_sample_images,
                 input_field_url, cached_image_url_state, cached_image_array_state,
                 *inputs_for_processing_parameters,
                 gr.State(True), is_batch_updating_state,  # force_download=True, batch_active
@@ -107,6 +108,7 @@ def run_app():
         )
 
         param_change_event_inputs = [
+            input_dropdown_sample_images,
             cached_image_url_state, cached_image_array_state,
             *inputs_for_processing_parameters,
             is_batch_updating_state
@@ -211,7 +213,8 @@ def _get_processing_params(cw, ch, effect, bright, contr, guidelines, guide_colo
 
 
 def _load_or_use_cached_and_process(
-    url_to_process, current_cached_url, current_cached_array,
+    selected_sample_choice_str, url_from_input_field,
+    current_cached_url, current_cached_array,
     cw, ch, effect, bright, contr, guidelines, guide_color_name, out_width,
     force_download, batch_update_active,
     source_log_msg="Processing"
@@ -228,20 +231,46 @@ def _load_or_use_cached_and_process(
     new_cached_url = current_cached_url
     new_cached_array = current_cached_array
 
-    final_url_to_process = url_to_process
-    print(f"{get_timestamp()} force_download {force_download}, source_log_msg {source_log_msg}, Processing image from URL: {url_to_process}")
+    final_url_to_process = url_from_input_field
+    print(f"{get_timestamp()} force_download {force_download}, source_log_msg {source_log_msg}, Processing image from URL: {url_from_input_field}")
 
-    if force_download and source_log_msg in ["Update Button", "Initial Load"]:
-        for item in SAMPLE_IMAGES_DATA:
-            item_url = item.get("image_url") or item.get("base_url")
-            if item_url == url_to_process:
-                if item.get('scraping') or item.get('force_url_update'):
-                    print(f"{get_timestamp()} Getting fresh URL for '{item['name']}'")
-                    fresh_url = get_image_url_from_item(item)
-                    if fresh_url:
-                        final_url_to_process = fresh_url
-                        print(f"{get_timestamp()} Using fresh URL: {final_url_to_process}")
-                break
+    if force_download:
+        item_definition_to_refresh = None
+        if source_log_msg == "Update Button" and selected_sample_choice_str:
+            for item_def in SAMPLE_IMAGES_DATA:
+                if f"{item_def['name']} - {item_def['description']}" == selected_sample_choice_str:
+                    item_definition_to_refresh = item_def
+                    print(f"{get_timestamp()} Identified item from dropdown for 'Update Button': '{item_def['name']}'")
+                    break
+        if not item_definition_to_refresh:
+            for item_def in SAMPLE_IMAGES_DATA:
+                if item_def.get("base_url") == url_from_input_field:
+                    item_definition_to_refresh = item_def
+                    print(
+                        f"{get_timestamp()} Identified item by base_url match: '{item_def['name']}' for URL {url_from_input_field}")
+                    break
+                if item_def.get("image_url") and item_def.get("image_url") == url_from_input_field:
+                    item_definition_to_refresh = item_def
+                    print(
+                        f"{get_timestamp()} Identified item by image_url match: '{item_def['name']}' for URL {url_from_input_field}")
+                    break
+
+        if item_definition_to_refresh:
+            needs_fresh_url = bool(item_definition_to_refresh.get('scraping')) or \
+                item_definition_to_refresh.get('force_url_update', False)
+
+            if needs_fresh_url:
+                print(
+                    f"{get_timestamp()} Getting fresh URL for '{item_definition_to_refresh['name']}'. Has scraping: {bool(item_definition_to_refresh.get('scraping'))}, Has force_update: {item_definition_to_refresh.get('force_url_update', False)}")
+                fresh_url = get_image_url_from_item(item_definition_to_refresh)
+                if fresh_url:
+                    final_url_to_process = fresh_url
+                    print(f"{get_timestamp()} Using fresh URL: {final_url_to_process}")
+            else:
+                print(
+                    f"{get_timestamp()} Item '{item_definition_to_refresh['name']}' does not require fresh URL fetching for this operation.")
+        else:
+            print(f"{get_timestamp()} No specific sample item definition found for URL: {url_from_input_field}. Proceeding with this URL if not cached.")
 
     if force_download or final_url_to_process != current_cached_url or current_cached_array is None:
         print(f"{get_timestamp()} Downloading image from URL: {final_url_to_process}")  # Use final_url_to_process
@@ -270,6 +299,7 @@ def _load_or_use_cached_and_process(
 
 
 def on_param_change_handler(
+    selected_sample_choice_str,
     current_cached_url, current_cached_array,
     cw, ch, effect, bright, contr, guidelines, guide_color_name, out_width,
     batch_update_active
@@ -283,7 +313,9 @@ def on_param_change_handler(
         return (gr.skip(),) * 3
 
     return _load_or_use_cached_and_process(
-        current_cached_url, current_cached_url, current_cached_array,
+        selected_sample_choice_str,
+        current_cached_url,  # url_from_input_field is the current_cached_url for param changes
+        current_cached_url, current_cached_array,
         cw, ch, effect, bright, contr, guidelines, guide_color_name, out_width,
         False, batch_update_active,
         "Param Change"
@@ -325,6 +357,7 @@ def handle_sample_image_selection_and_load(
     new_guideline_color = DEFAULT_GUIDELINE_COLOR_NAME
 
     processed_img, final_cached_array, final_cached_url = _load_or_use_cached_and_process(
+        selected_choice_str,
         new_url,
         gr.State(None), gr.State(None),  # Clearing cache states to force download
         cw, ch, effect, new_brightness, new_contrast,
@@ -349,7 +382,9 @@ def clear_all_and_reload_default_action(batch_update_active_flag):
 
     print(f"{get_timestamp()} Resetting to defaults and reloading image.")
 
+    default_choice_str = set_default_choice_str()
     processed_img, final_cached_array, final_cached_url = _load_or_use_cached_and_process(
+        default_choice_str,
         DEFAULT_IMAGE_URL, gr.State(None), gr.State(None),
         DEFAULT_CHUNK_W, DEFAULT_CHUNK_H, DEFAULT_COLOR_EFFECT,
         DEFAULT_BRIGHTNESS, DEFAULT_CONTRAST, DEFAULT_SHOW_GUIDELINES,
@@ -359,10 +394,10 @@ def clear_all_and_reload_default_action(batch_update_active_flag):
     )
 
     return (
-        DEFAULT_IMAGE_URL, DEFAULT_CHUNK_W, DEFAULT_CHUNK_H,
+        final_cached_url, DEFAULT_CHUNK_W, DEFAULT_CHUNK_H,
         DEFAULT_COLOR_EFFECT, DEFAULT_BRIGHTNESS, DEFAULT_CONTRAST,
         DEFAULT_SHOW_GUIDELINES, DEFAULT_GUIDELINE_COLOR_NAME, OUTPUT_IMAGE_WIDTH_IN_PIXELS,
-        set_default_choice_str(),
+        default_choice_str,
         processed_img,
         final_cached_array, final_cached_url
     )
@@ -374,7 +409,10 @@ def initial_load_action():
     This is called when the app is first loaded.
     """
     print(f"{get_timestamp()} Initial application load.")
+
+    default_choice_str = set_default_choice_str()
     processed_img, initial_cached_array, initial_cached_url = _load_or_use_cached_and_process(
+        default_choice_str,
         DEFAULT_IMAGE_URL,
         None, None,  # current_cached_url, current_cached_array
         DEFAULT_CHUNK_W, DEFAULT_CHUNK_H, DEFAULT_COLOR_EFFECT,
