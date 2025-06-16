@@ -13,7 +13,7 @@ Optionally added some extra features, numpy processing for color channels.
 *   **Image Input via URL**: Users can provide any direct image URL.
 
 *   **Customizable Shredding**:
-    *   Adjustable chunk width and height using sliders.
+    *   Adjustable chunk width and height using sliders (this is not only for visual exploration but also to compensate input file resolution differences).
     *   Supports square or rectangular chunks, leading to varied visual effects.
 
 *   **Image Padding**: Input images are automatically padded (using edge pixels) to ensure dimensions are perfectly divisible by the chosen chunk sizes.
@@ -81,7 +81,11 @@ img_array = np.array([
     *   The downloaded image is converted to a PIL Image object and then to a NumPy array.
     *   The NumPy array is padded using `np.pad` with `mode='edge'` so that its width and height are exact multiples of the user-defined `chunk_width` and `chunk_height`. As a cons, it results in _pixel stretching_ artefacts for large chunk sizes.
 
-3.  **Color Effects Application (`utils.py -> apply_color_effect`)**: If a color effect other than "None" is selected, it's applied to the padded image array using NumPy. The image array is first converted to `np.float32` for calculations to prevent data loss or overflow, and then clipped back to the 0-255 range and converted to `np.uint8`. Effects descriptions:
+3.  **Shredding (`shredder.py`)**:
+    *   **Vertical Shredding**: The padded image is sliced into vertical chunks. These chunks are then reassembled by first taking all even-indexed chunks and then all odd-indexed chunks, stacking them horizontally.
+    *   **Horizontal Shredding**: The vertically shredded image is then sliced into horizontal chunks. These are reassembled similarly (even-indexed followed by odd-indexed), stacking them vertically to produce the final image.
+
+4.  **Color Effects Application (`utils.py -> apply_color_effect`)**: If a color effect other than "None" is selected, it's applied to the padded image array using NumPy. The image array is first converted to `np.float32` for calculations to prevent data loss or overflow, and then clipped back to the 0-255 range and converted to `np.uint8`. Effects descriptions:
     *   **Invert Colors**: `255 - img_array`. NumPy performs element-wise subtraction of each pixel value from scalar 255, broadcasting to match `img` array shape. Another way is to use `~img` or `numpy.invert(img)` bitwise NOT, which would work on `uint8`, though it is less intuitively readable. Applying this to `img_copy` (which is `float32`) would be maybe slightly less performant but still correct, though `numpy.invert(img_copy)` - not.
 
     *   **Swap R/G Channels**: `swapped_img[..., 0], swapped_img[..., 1] = swapped_img[..., 1].copy(), swapped_img[..., 0].copy()`. NumPy's array slicing is used to select the Red and Green channels (0 and 1 respectively, on the last axis) and swap their contents.
@@ -108,18 +112,14 @@ img_array = np.array([
 
     *   **Solarize**: In photography, [solarization](https://en.wikipedia.org/wiki/Solarization_(photography)) is the effect of tone reversal observed in cases of extreme overexposure of the photographic film in the camera. Not a big fan of this, but it is ubiquitous. A higher threshold value sets a brighter threshold, and colors need to be brighter to be overexposed. `solarized_img[solarized_img >= threshold] = 255 - solarized_img[solarized_img >= threshold]`. NumPy's boolean array indexing is used to select pixels above a `threshold` and inverts their values.
 
-4.  **Shredding (`shredder.py`)**:
-    *   **Vertical Shredding**: The padded image is sliced into vertical chunks. These chunks are then reassembled by first taking all even-indexed chunks and then all odd-indexed chunks, stacking them horizontally.
-    *   **Horizontal Shredding**: The vertically shredded image is then sliced into horizontal chunks. These are reassembled similarly (even-indexed followed by odd-indexed), stacking them vertically to produce the final image.
-
 5.  **Display**:
     *   `matplotlib` is used to create a figure with three subplots showing the original (padded) image, the image after vertical shredding, and the final shredded image.
     *   This figure is saved to an in-memory buffer and converted to a PIL Image, which is then displayed in the Gradio UI.
     *   Output view for seamless tile image:<br>
       ![Output view](assets/images/result_example.png)
-    *   Output view with color alteration - swap red and green channels, can reveal some hidden truth:<br>
+    *   Output view with color alteration - swap <span style="color:red">red</span> and <span style="color:green">green</span> channels, can reveal some hidden truth (tip: try grayscale version, it renders both dog expressions at once as all channels are combined):<br>
       ![Output with effect](assets/images/result_fx_example_1.png)
-    *   Output view with multiple effects - leaving red channel only and popping brightness with contrast:<br>
+    *   Output view with multiple effects - leaving <span style="color:red">red</span> channel only and popping brightness with contrast:<br>
       ![Output with multiple effects](assets/images/result_fx_example_2.png)
     *   Output view with slicing guidelines, helps visualising action results:<br>
       ![Output with guidelines](assets/images/result_guidelines_example.png)
