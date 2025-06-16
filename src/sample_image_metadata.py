@@ -47,6 +47,13 @@ DEFAULT_SAMPLE_IMAGES_DATA = [
         }
     },
     {
+        "name": "1️⃣\u2003Checkerboard",
+        "description": "playing with chunk sizes can create interesting patterns",
+        "base_url": "https://dinopixel.com/checker-board-pixel-art-9080",
+        "image_url": "https://dinopixel.com/preload/1221/checker-board.png",
+        "license": "Unknown (DinoPixel)",
+    },
+    {
         "name": "1️⃣\u2003Vibrant Flower Collection",
         "description": "multiply blossom boxes",
         "base_url": "https://stockcake.com/i/vibrant-flower-collection_1061865_1157624",

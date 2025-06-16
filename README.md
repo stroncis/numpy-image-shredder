@@ -116,17 +116,17 @@ img_array = np.array([
     *   `matplotlib` is used to create a figure with three subplots showing the original (padded) image, the image after vertical shredding, and the final shredded image.
     *   This figure is saved to an in-memory buffer and converted to a PIL Image, which is then displayed in the Gradio UI.
     *   Output view for seamless tile image:<br>
-      ![Output view](assets/images/result_example.png)
-    *   Output view with color alteration - swap <span style="color:red">red</span> and <span style="color:green">green</span> channels, can reveal some hidden truth (tip: try grayscale version, it renders both dog expressions at once as all channels are combined):<br>
-      ![Output with effect](assets/images/result_fx_example_1.png)
-    *   Output view with multiple effects - leaving <span style="color:red">red</span> channel only and popping brightness with contrast:<br>
-      ![Output with multiple effects](assets/images/result_fx_example_2.png)
-    *   Output view with slicing guidelines, helps visualising action results:<br>
-      ![Output with guidelines](assets/images/result_guidelines_example.png)
-    *   Output using [thispersondoesnotexist.com](https://thispersondoesnotexist.com/)'s `StyleGAN2` face generator. This can en up as a comical lo-fi character or plain horror, use with discretion. No person's feelings has been harmed. Smack **Reload image** button to cease current person's non existence.<br>
-      ![Output with guidelines](assets/images/result_thispersondoesnotexist.png)
-
-      
+        ![Output view](assets/images/result_example.png)
+    *   Output view with color alteration - swap <span style="color:red">red</span> and <span style="color:green">green</span> channels, can reveal some hidden truth (tip: try grayscale version, it renders both dog expressions at once as all channels are combined):
+        ![Output with effect](assets/images/result_fx_example_1.png)
+    *   Output view with multiple effects - leaving <span style="color:red">red</span> channel only and popping brightness with contrast:
+        ![Output with multiple effects](assets/images/result_fx_example_2.png)
+    *   Output view with slicing guidelines, helps visualising action results:
+        ![Output with guidelines](assets/images/result_guidelines_example.png)
+    *   Output using [thispersondoesnotexist.com](https://thispersondoesnotexist.com/)'s `StyleGAN2` face generator. This can en up as a comical lo-fi character or plain horror, use with discretion. No person's feelings has been harmed. Smack **Reload image** button to cease current person's non existence.
+        ![Output with guidelines](assets/images/result_thispersondoesnotexist.png)
+    *   Slicing checkerboard:
+        ![Output with guidelines](assets/images/result_checkerboard.png)
 
 ## Technologies Used
 
