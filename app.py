@@ -10,16 +10,6 @@ from src.config import (
     GUIDELINE_COLORS, DEFAULT_GUIDELINE_COLOR_NAME, OUTPUT_IMAGE_WIDTH_IN_PIXELS, MIN_VALID_OUTPUT_WIDTH
 )
 
-# TODO: refactor image handling to OOP.
-# TODO: local image loading (still implies fetching as the UI is Browser based) for offline use.
-# TODO: multiple shredding levels, thus making output cloning to 4x4 or 8x8 grid. For true breeders!
-# TODO: export effects settings to json file, so that it can be loaded later.
-# TODO: padding does not look good, it creates pixel stretching artefacts on the edges.
-#       As a solution, mirror the same amount of pixes as the offset instead of repeating last pixel.
-# TODO: add "selector" entry to json, if selector is set, then it should scrape using that selector for image URL from the page.
-# TODO: add an histogram overlay to the output image.
-# TODO: scrape the page for all images, give a list of all larger than ???px images.
-
 sample_image_choices = [f"{item['name']} - {item['description']}" for item in SAMPLE_IMAGES_DATA]
 
 
