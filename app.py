@@ -236,41 +236,79 @@ def _load_or_use_cached_and_process(
 
     if force_download:
         item_definition_to_refresh = None
-        if source_log_msg == "Update Button" and selected_sample_choice_str:
-            for item_def in SAMPLE_IMAGES_DATA:
-                if f"{item_def['name']} - {item_def['description']}" == selected_sample_choice_str:
-                    item_definition_to_refresh = item_def
-                    print(f"{get_timestamp()} Identified item from dropdown for 'Update Button': '{item_def['name']}'")
-                    break
-        if not item_definition_to_refresh:
-            for item_def in SAMPLE_IMAGES_DATA:
-                if item_def.get("base_url") == url_from_input_field:
-                    item_definition_to_refresh = item_def
-                    print(
-                        f"{get_timestamp()} Identified item by base_url match: '{item_def['name']}' for URL {url_from_input_field}")
-                    break
-                if item_def.get("image_url") and item_def.get("image_url") == url_from_input_field:
-                    item_definition_to_refresh = item_def
-                    print(
-                        f"{get_timestamp()} Identified item by image_url match: '{item_def['name']}' for URL {url_from_input_field}")
-                    break
+
+        if source_log_msg == "Update Button":
+            selected_item_from_dropdown = None
+
+            if selected_sample_choice_str:
+                for item_def in SAMPLE_IMAGES_DATA:
+                    if f"{item_def['name']} - {item_def['description']}" == selected_sample_choice_str:
+                        selected_item_from_dropdown = item_def
+                        break
+
+            if selected_item_from_dropdown:
+                is_input_url_canonical_for_dropdown_item = \
+                    (url_from_input_field == selected_item_from_dropdown.get("base_url")) or \
+                    (selected_item_from_dropdown.get("image_url") and url_from_input_field ==
+                     selected_item_from_dropdown.get("image_url"))
+
+                if is_input_url_canonical_for_dropdown_item:
+                    # Intent: Refresh the currently selected dropdown item
+                    item_definition_to_refresh = selected_item_from_dropdown
+                    # print(f"{get_timestamp()} 'Update Button': Refreshing selected sample '{selected_item_from_dropdown['name']}'.")
+                else:
+                    # Intent: Load the (potentially custom) URL from the input field.
+                    # Does this custom URL happen to be a base_url/image_url of *any* (possibly different) sample?
+                    for item_def in SAMPLE_IMAGES_DATA:
+                        if item_def.get("base_url") == url_from_input_field or \
+                           (item_def.get("image_url") and item_def.get("image_url") == url_from_input_field):
+                            item_definition_to_refresh = item_def
+                            # print(f"{get_timestamp()} 'Update Button': URL in input field ('{url_from_input_field}') matches sample definition '{item_def['name']}'.")
+                            break
+                    # if not item_definition_to_refresh:
+                    #     print(f"{get_timestamp()} 'Update Button': URL in input field ('{url_from_input_field}') is custom, no matching sample definition.")
+            else:
+                # No dropdown selection, or "Update Button" but dropdown is blank (should not happen with a default)
+                # Fallback: check if url_from_input_field matches any sample's base/image_url
+                for item_def in SAMPLE_IMAGES_DATA:
+                    if item_def.get("base_url") == url_from_input_field or \
+                       (item_def.get("image_url") and item_def.get("image_url") == url_from_input_field):
+                        item_definition_to_refresh = item_def
+                        # print(f"{get_timestamp()} 'Update Button' (no dropdown context or mismatch): Input field URL matches sample '{item_def['name']}'.")
+                        break
+
+        elif source_log_msg in ["Initial Load", "Reset Button", "Sample Image Change"]:
+            if selected_sample_choice_str:
+                for item_def in SAMPLE_IMAGES_DATA:
+                    if f"{item_def['name']} - {item_def['description']}" == selected_sample_choice_str:
+                        if url_from_input_field == item_def.get("base_url") or \
+                           url_from_input_field == item_def.get("image_url"):
+                            item_definition_to_refresh = item_def
+                            # print(f"{get_timestamp()} '{source_log_msg}': Identified item '{item_def['name']}' from dropdown and matching input URL.")
+                        else:
+                            # print(f"{get_timestamp()} WARNING '{source_log_msg}': Mismatch between dropdown ('{selected_sample_choice_str}') and input URL ('{url_from_input_field}'). Attempting to find item by input URL.")
+                            for fallback_item_def in SAMPLE_IMAGES_DATA:
+                                if fallback_item_def.get("base_url") == url_from_input_field or \
+                                   (fallback_item_def.get("image_url") and fallback_item_def.get("image_url") == url_from_input_field):
+                                    item_definition_to_refresh = fallback_item_def
+                                    # print(f"{get_timestamp()} '{source_log_msg}': Fallback found item '{fallback_item_def['name']}' by input URL.")
+                                    break
+                        break
 
         if item_definition_to_refresh:
             needs_fresh_url = bool(item_definition_to_refresh.get('scraping')) or \
                 item_definition_to_refresh.get('force_url_update', False)
 
             if needs_fresh_url:
-                print(
-                    f"{get_timestamp()} Getting fresh URL for '{item_definition_to_refresh['name']}'. Has scraping: {bool(item_definition_to_refresh.get('scraping'))}, Has force_update: {item_definition_to_refresh.get('force_url_update', False)}")
-                fresh_url = get_image_url_from_item(item_definition_to_refresh)
+                # print(f"{get_timestamp()} Getting fresh URL for '{item_definition_to_refresh['name']}'. Has scraping: {bool(item_definition_to_refresh.get('scraping'))}, Has force_update: {item_definition_to_refresh.get('force_url_update', False)}")
+                fresh_url = get_image_url_from_item(item_definition_to_refresh)  # Uses item's base_url for scraping
                 if fresh_url:
                     final_url_to_process = fresh_url
-                    print(f"{get_timestamp()} Using fresh URL: {final_url_to_process}")
-            else:
-                print(
-                    f"{get_timestamp()} Item '{item_definition_to_refresh['name']}' does not require fresh URL fetching for this operation.")
-        else:
-            print(f"{get_timestamp()} No specific sample item definition found for URL: {url_from_input_field}. Proceeding with this URL if not cached.")
+                    # print(f"{get_timestamp()} Using fresh URL: {final_url_to_process}")
+        #     else:
+        #         print(f"{get_timestamp()} Item '{item_definition_to_refresh['name']}' does not require fresh URL fetching for this operation.")
+        # else:
+        #     print(f"{get_timestamp()} No specific sample item definition applies. Using URL from input field directly: {final_url_to_process}")
 
     if force_download or final_url_to_process != current_cached_url or current_cached_array is None:
         print(f"{get_timestamp()} Downloading image from URL: {final_url_to_process}")  # Use final_url_to_process
