@@ -125,8 +125,9 @@ img_array = np.array([
         ![Output with guidelines](assets/images/result_guidelines_example.png)
     *   Output using [thispersondoesnotexist.com](https://thispersondoesnotexist.com/)'s `StyleGAN2` face generator. This can en up as a comical lo-fi character or plain horror, use with discretion. No person's feelings has been harmed. Smack **Reload image** button to cease current person's non existence.
         ![Output with guidelines](assets/images/result_thispersondoesnotexist.png)
-    *   Slicing checkerboard:
+    *   Slicing [checkerboard](https://dinopixel.com/checker-board-pixel-art-9080) and [circle](https://www.freepik.com/free-vector/japanese-vintage-seamless-pattern-vector-illustration-horizontally-vertically-repeatable_79635077.htm) patterns:
         ![Output with guidelines](assets/images/result_checkerboard.png)
+        ![Output with guidelines](assets/images/result_pattern1.png)
 
 ## Technologies Used
 
