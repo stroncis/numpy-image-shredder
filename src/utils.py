@@ -117,10 +117,16 @@ def process_image(
     if current_dpi == 0:
         raise gr.Error("Output Image DPI in configuration cannot be zero.")
 
-    output_image_height = output_image_width / OUTPUT_IMAGE_ASPECT_RATIO
+    padded_h, padded_w, _ = padded_img.shape
+    if padded_h == 0 or padded_w == 0:
+        input_aspect_ratio = OUTPUT_IMAGE_ASPECT_RATIO # Fallback
+    else:
+        input_aspect_ratio = padded_w / padded_h
+
+    dynamic_output_image_height_px = (output_image_width / (input_aspect_ratio * 3)) + (scaled_title_fontsize * 4)
 
     fig_w = output_image_width / current_dpi
-    fig_h = output_image_height / current_dpi
+    fig_h = dynamic_output_image_height_px / current_dpi
 
     if fig_w <= 0 or fig_h <= 0:
         raise gr.Error(
