@@ -129,7 +129,7 @@ img_array = np.array([
         ![Output with guidelines](assets/images/result_checkerboard.png)
         ![Output with guidelines](assets/images/result_pattern1.png)
 
-## Technologies Used
+## Tech Stack
 
 *   **Python 3**
 *   **Gradio**: For creating the interactive web UI.
