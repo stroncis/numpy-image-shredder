@@ -128,6 +128,8 @@ img_array = np.array([
     *   Slicing [checkerboard](https://dinopixel.com/checker-board-pixel-art-9080) and [circle](https://www.freepik.com/free-vector/japanese-vintage-seamless-pattern-vector-illustration-horizontally-vertically-repeatable_79635077.htm) patterns:
         ![Output with guidelines](assets/images/result_checkerboard.png)
         ![Output with guidelines](assets/images/result_pattern1.png)
+    *   Output view with filtered-out objects:
+        ![Output with guidelines](assets/images/result_disappear.png)
 
 ## Tech Stack
 
