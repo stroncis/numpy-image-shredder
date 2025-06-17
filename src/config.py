@@ -35,7 +35,7 @@ SAMPLE_IMAGES_DATA = DEFAULT_SAMPLE_IMAGES_DATA  # get_updated_sample_images()
 
 if SAMPLE_IMAGES_DATA:
     first_item = SAMPLE_IMAGES_DATA[0]
-    DEFAULT_IMAGE_URL = first_item.get("image_url") or first_item.get("base_url")
+    DEFAULT_IMAGE_URL = first_item.get("image_url") or first_item.get("source_url")
 else:
     DEFAULT_IMAGE_URL = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Yellow_flowers_a.jpg/960px-Yellow_flowers_a.jpg"
 

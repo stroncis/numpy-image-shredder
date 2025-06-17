@@ -32,7 +32,7 @@ session.headers.update({
 def get_image_url_from_item(item):
     """
     Get the final image URL for an item.
-    If item has scraping config, scrape fresh URL from base_url.
+    If item has scraping config, scrape fresh URL from source_url.
     Otherwise, return the static image_url.
 
     Returns:
@@ -44,8 +44,8 @@ def get_image_url_from_item(item):
                     scraping_config.get('image_selector_regex'))
 
     if has_scraping:
-        print(f"Info: Scraping fresh URL for '{item['name']}' from {item['base_url']}")
-        return _fetch_image_url_with_regex(item['base_url'], scraping_config)
+        print(f"Info: Scraping fresh URL for '{item['name']}' from {item['source_url']}")
+        return _fetch_image_url_with_regex(item['source_url'], scraping_config)
     else:
         image_url = item.get('image_url')
         if image_url:
@@ -56,12 +56,12 @@ def get_image_url_from_item(item):
             return None
 
 
-def _fetch_image_url_with_regex(base_url, scraping_config):
+def _fetch_image_url_with_regex(source_url, scraping_config):
     """
     Fetches image URL using regex patterns from scraping config.
 
     Args:
-        base_url (str): The page URL to scrape
+        source_url (str): The page URL to scrape
         scraping_config (dict): Configuration containing:
             - image_selector_regex: Pattern to find image URL in HTML
             - url_transform_regex: Optional pattern to transform found URL
@@ -71,15 +71,15 @@ def _fetch_image_url_with_regex(base_url, scraping_config):
         str or None: The extracted/transformed image URL, or None if failed
     """
     try:
-        response = session.get(base_url, timeout=15)
+        response = session.get(source_url, timeout=15)
         response.raise_for_status()
 
-        print(f"Info: Response status code for {base_url}: {response.status_code}")
-        # print(f"Info: Response headers for {base_url}: {response.headers}")
+        print(f"Info: Response status code for {source_url}: {response.status_code}")
+        # print(f"Info: Response headers for {source_url}: {response.headers}")
 
         html_content = response.text
         if not html_content:
-            print(f"Warning: No content returned for {base_url}.")
+            print(f"Warning: No content returned for {source_url}.")
             return None
 
         # Uncomment HTML content writer for debugging
@@ -89,12 +89,12 @@ def _fetch_image_url_with_regex(base_url, scraping_config):
 
         image_selector_regex = scraping_config.get('image_selector_regex')
         if not image_selector_regex:
-            print(f"Warning: No image_selector_regex provided for {base_url}")
+            print(f"Warning: No image_selector_regex provided for {source_url}")
             return None
 
         match = re.search(image_selector_regex, html_content, re.DOTALL | re.IGNORECASE)
         if not match:
-            print(f"Warning: Could not find image URL using regex pattern for {base_url}")
+            print(f"Warning: Could not find image URL using regex pattern for {source_url}")
             return None
 
         found_url = match.group(1)
@@ -114,22 +114,22 @@ def _fetch_image_url_with_regex(base_url, scraping_config):
         if found_url.startswith('//'):
             found_url = 'https:' + found_url
         elif found_url.startswith('/'):
-            found_url = urljoin(base_url, found_url)
+            found_url = urljoin(source_url, found_url)
         elif not found_url.startswith(('http://', 'https://')):
-            found_url = urljoin(base_url, found_url)
+            found_url = urljoin(source_url, found_url)
 
         if found_url.startswith(('http://', 'https://')) and any(ext in found_url.lower() for ext in ['.jpg', '.jpeg', '.png', '.webp']):
             return found_url
         else:
-            print(f"Warning: Extracted URL for {base_url} doesn't look like a valid image URL: {found_url}")
+            print(f"Warning: Extracted URL for {source_url} doesn't look like a valid image URL: {found_url}")
             return None
 
     except requests.RequestException as e:
-        print(f"Warning: Request failed for {base_url}: {e}")
+        print(f"Warning: Request failed for {source_url}: {e}")
     except re.error as e:
-        print(f"Warning: Regex error for {base_url}: {e}")
+        print(f"Warning: Regex error for {source_url}: {e}")
     except Exception as e:
-        print(f"Warning: An unexpected error occurred while fetching/parsing {base_url}: {e}")
+        print(f"Warning: An unexpected error occurred while fetching/parsing {source_url}: {e}")
 
     return None
 
