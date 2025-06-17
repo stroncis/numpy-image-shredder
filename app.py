@@ -14,7 +14,20 @@ sample_image_choices = [f"{item['name']} - {item['description']}" for item in SA
 
 
 def run_app():
-    with gr.Blocks(title="NumPy Image Shredder") as image_shredder_app:
+    custom_css = """
+        .special-button { background-color: #FF5733 !important; color: white !important; }
+    """
+    with gr.Blocks(
+        title="NumPy Image Shredder",
+        # Colors: amber, blue, cyan, emerald, fuchsia, gray, green, indigo, lime, neutral,
+        # orange, pink, purple, red, rose, sky, slate, stone, teal, violet, yellow, zinc
+        theme=gr.themes.Citrus(  # type: ignore
+            primary_hue="amber",
+            secondary_hue="orange",
+            neutral_hue="gray",
+        ),
+        css=custom_css
+    ) as image_shredder_app:
         gr.Markdown("# AIUA6 PP2 Photo Shredder")
         gr.Markdown("## Image slicer and recombinator")
         gr.Markdown(
@@ -36,7 +49,7 @@ def run_app():
 
             with gr.Row(equal_height=True):
                 input_field_url = gr.Textbox(label='Image URL', value=DEFAULT_IMAGE_URL, scale=6)
-                input_button_update_image = gr.Button("Reload image", scale=1, min_width=10)
+                input_button_update_image = gr.Button("Reload image", scale=1, min_width=10, elem_classes=["special-button"])
 
             with gr.Row():
                 input_slider_chunk_w = gr.Slider(4, 128, step=4, value=DEFAULT_CHUNK_W, label='Chunk Width (px)')

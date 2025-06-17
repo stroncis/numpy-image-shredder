@@ -6,7 +6,7 @@ Optionally added some extra features, numpy processing for color channels.
 
 ## Features
 
-*   **Web-Based UI**: Interactive interface built with Gradio:
+*   **Web-Based UI**:
 
     ![App GUI view](assets/images/app_gui_layout.png)
 
