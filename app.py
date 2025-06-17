@@ -1,5 +1,6 @@
 import gradio as gr
 import numpy as np
+from gradio.themes.utils import sizes as theme_sizes  # Because Gradio lookup fails
 
 from src.utils import process_image, get_timestamp, download_image
 from src.image_updater import get_image_url_from_item
@@ -20,7 +21,8 @@ def run_app():
     with gr.Blocks(
         title="NumPy Image Shredder",
         theme=gr.themes.Citrus(  # type: ignore
-            secondary_hue="orange"
+            secondary_hue="orange",
+            spacing_size=theme_sizes.spacing_md,
         ).set(
             button_primary_shadow_hover="none",
             button_primary_shadow="none",
