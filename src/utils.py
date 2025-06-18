@@ -54,6 +54,7 @@ def download_image(url):
 
 def pad_image_to_fit_chunks(img, chunk_width, chunk_height):
     h, w, _ = img.shape
+    # print(f"{get_timestamp()} Padding image (WxH): original size {w}x{h} ({type(w)}x{type(h)}), chunk size {chunk_width}x{chunk_height}({type(chunk_width)}x{type(chunk_height)})")
     pad_h = (chunk_height - (h % chunk_height)) % chunk_height
     pad_w = (chunk_width - (w % chunk_width)) % chunk_width
     padded_img = np.pad(img, ((0, pad_h), (0, pad_w), (0, 0)), mode='edge')
@@ -70,6 +71,7 @@ def process_image(
     show_guidelines,
     guideline_color_rgb_array,
     output_image_width,
+    image_url=None,
     source=None
 ):
     if output_image_width is None or not isinstance(output_image_width, (int, float)) or output_image_width < MIN_VALID_OUTPUT_WIDTH:
@@ -147,6 +149,17 @@ def process_image(
     axs[2].imshow(display_final_shred)
     axs[2].set_title(f'Final Image{applied_effects_str}', fontsize=scaled_title_fontsize)
     axs[2].axis('off')
+
+    fig.text(
+        0.5,
+        0.01,
+        str(image_url) if image_url else "",
+        ha='center',
+        va='bottom',
+        fontsize=scaled_title_fontsize,
+        color='#888888',
+        wrap=True
+    )
 
     plt.tight_layout()
     buf = BytesIO()
