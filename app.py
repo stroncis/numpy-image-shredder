@@ -6,6 +6,7 @@ from src.utils import process_image, get_timestamp, download_image
 from src.image_updater import get_image_url_from_item
 from src.config import (
     DEFAULT_IMAGE_URL, DEFAULT_CHUNK_W, DEFAULT_CHUNK_H,
+    MIN_CHUNK_SIZE_PX, INITIAL_MAX_CHUNK_PX, CHUNK_STEP_PX,
     SAMPLE_IMAGES_DATA, COLOR_EFFECTS, DEFAULT_COLOR_EFFECT,
     DEFAULT_BRIGHTNESS, DEFAULT_CONTRAST, DEFAULT_SHOW_GUIDELINES,
     GUIDELINE_COLORS, DEFAULT_GUIDELINE_COLOR_NAME, OUTPUT_IMAGE_WIDTH_IN_PIXELS, MIN_VALID_OUTPUT_WIDTH
@@ -54,6 +55,7 @@ def run_app():
         cached_image_array_state = gr.State(None)
         cached_image_url_state = gr.State(None)
         is_batch_updating_state = gr.State(value=False)
+        chunk_delta_state = gr.State(0)
 
         # --------------------------------* UI Input Components *--------------------------------
 
@@ -66,11 +68,33 @@ def run_app():
 
             with gr.Row(equal_height=True):
                 input_field_url = gr.Textbox(label='Image URL', value=DEFAULT_IMAGE_URL, scale=6)
-                input_button_update_image = gr.Button("Reload image", scale=1, min_width=10, elem_classes=["load-button"])
+                input_button_update_image = gr.Button(
+                    "Reload image", scale=1, min_width=10, elem_classes=["load-button"])
 
             with gr.Row():
-                input_slider_chunk_w = gr.Slider(4, 128, step=4, value=DEFAULT_CHUNK_W, label='Chunk Width (px)')
-                input_slider_chunk_h = gr.Slider(4, 128, step=4, value=DEFAULT_CHUNK_H, label='Chunk Height (px)')
+                input_slider_chunk_w = gr.Slider(
+                    minimum=MIN_CHUNK_SIZE_PX,
+                    maximum=INITIAL_MAX_CHUNK_PX,
+                    step=CHUNK_STEP_PX,
+                    value=DEFAULT_CHUNK_W,
+                    label='Chunk Width (px)',
+                    scale=10
+                )
+                chunk_sliders_lock = gr.Checkbox(
+                    label="🔒",
+                    value=False,
+                    scale=1,
+                    min_width=50
+                )
+                input_slider_chunk_h = gr.Slider(
+                    minimum=MIN_CHUNK_SIZE_PX,
+                    maximum=INITIAL_MAX_CHUNK_PX,
+                    step=CHUNK_STEP_PX,
+                    value=DEFAULT_CHUNK_H,
+                    label='Chunk Height (px)',
+                    scale=10,
+                    interactive=True
+                )
 
             input_radio_color_effect = gr.Radio(
                 label="Base Color Effect",
@@ -115,6 +139,7 @@ def run_app():
             input_slider_brightness, input_slider_contrast, input_checkbox_show_guidelines,
             input_radio_guideline_color, input_field_output_width
         ]
+
         for input_component in all_input_components:
             input_component.change(
                 fn=print_event_data,
@@ -132,6 +157,33 @@ def run_app():
             input_radio_guideline_color, input_field_output_width
         ]
 
+        param_change_event_inputs = [
+            input_dropdown_sample_images,
+            cached_image_url_state, cached_image_array_state,
+            *inputs_for_processing_parameters,
+            is_batch_updating_state
+        ]
+
+        slider_sync_triggers = [chunk_sliders_lock, input_slider_chunk_w]
+
+        chunk_sliders_lock.change(
+            fn=lock_slider_ratio,
+            inputs=[*slider_sync_triggers, input_slider_chunk_h],
+            outputs=[chunk_delta_state, input_slider_chunk_h]
+        )
+
+        input_slider_chunk_w.release(
+            fn=sync_height_to_width,
+            inputs=[chunk_sliders_lock, input_slider_chunk_w, chunk_delta_state],
+            outputs=[input_slider_chunk_h]
+        )
+
+        input_slider_chunk_h.release(
+            fn=on_param_change_handler,
+            inputs=param_change_event_inputs,
+            outputs=[output_image_component, cached_image_array_state, cached_image_url_state]
+        )
+
         input_button_update_image.click(
             fn=_load_or_use_cached_and_process,
             inputs=[
@@ -143,13 +195,6 @@ def run_app():
             ],
             outputs=[output_image_component, cached_image_array_state, cached_image_url_state]
         )
-
-        param_change_event_inputs = [
-            input_dropdown_sample_images,
-            cached_image_url_state, cached_image_array_state,
-            *inputs_for_processing_parameters,
-            is_batch_updating_state
-        ]
 
         # Registering non-sliders change events
         for input_component in [
@@ -242,7 +287,7 @@ def _get_processing_params(cw, ch, effect, bright, contr, guidelines, guide_colo
     guideline_color_rgb = np.array(GUIDELINE_COLORS.get(
         guide_color_name, GUIDELINE_COLORS[DEFAULT_GUIDELINE_COLOR_NAME]), dtype=np.uint8)
     return {
-        "chunk_w": cw, "chunk_h": ch, "color_effect": effect,
+        "chunk_w": int(cw), "chunk_h": int(ch), "color_effect": effect,
         "brightness_offset": bright, "contrast_factor": contr,
         "show_guidelines": guidelines, "guideline_color_rgb_array": guideline_color_rgb,
         "output_image_width": out_width
@@ -377,12 +422,17 @@ def on_param_change_handler(
     selected_sample_choice_str,
     current_cached_url, current_cached_array,
     cw, ch, effect, bright, contr, guidelines, guide_color_name, out_width,
-    batch_update_active
+    batch_update_active,
+    is_locked=None,
+    event_source=None
 ):
     """
     Handle changes to any UI parameters (sliders, radios, etc.) and process the image.
     If batch_update_active is True, skip processing and return skips.
     """
+    if is_locked and event_source == "width":
+        return (gr.skip(),) * 3
+
     if current_cached_array is None:
         gr.Warning("Please load an image first using the URL field and 'Update Image' button.")
         return (gr.skip(),) * 3
@@ -497,6 +547,24 @@ def initial_load_action():
         "Initial Load"
     )
     return processed_img, initial_cached_array, initial_cached_url
+
+
+def lock_slider_ratio(is_locked, width_val, height_val):
+    if is_locked:
+        delta = height_val - width_val
+        return delta, gr.update(interactive=False)
+    else:
+        return 0, gr.update(interactive=True)
+
+
+def sync_height_to_width(is_locked, width_val, delta):
+    if is_locked:
+        new_height = width_val + delta
+        # Clamping values
+        new_height = np.clip(new_height, MIN_CHUNK_SIZE_PX, INITIAL_MAX_CHUNK_PX)
+        return gr.update(value=new_height)
+    else:
+        return gr.skip()
 
 
 def print_event_data(label, comp_type, value):

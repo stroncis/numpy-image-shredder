@@ -47,6 +47,7 @@ Optionally added some extra features, numpy processing for color channels.
     *   Image re-processing automatically on any input change (chunk size changes update results only on release).
     *   Slicing guidelines, helping identify chunk edges.
     *   Custom output image width in pixels (subplot title fonts scaled accordingly) for exporting. Vertical padding (output image aspect ratio) is dinamically adjusted.
+    *   Chunk aspect ratio locking for convenient chunk size changes.
 
 ## How It Works
 
