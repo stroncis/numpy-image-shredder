@@ -109,6 +109,23 @@ def run_app():
 
         # --------------------------------* Event Handlers *--------------------------------
 
+        all_input_components = [
+            input_dropdown_sample_images, input_field_url, input_slider_chunk_w,
+            input_slider_chunk_h, input_radio_color_effect,
+            input_slider_brightness, input_slider_contrast, input_checkbox_show_guidelines,
+            input_radio_guideline_color, input_field_output_width
+        ]
+        for input_component in all_input_components:
+            input_component.change(
+                fn=print_event_data,
+                inputs=[
+                    gr.State(input_component.label or "Unknown Label"),
+                    gr.State(type(input_component).__name__),
+                    input_component
+                ],
+                outputs=None
+            )
+
         inputs_for_processing_parameters = [
             input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
             input_slider_brightness, input_slider_contrast, input_checkbox_show_guidelines,
@@ -480,6 +497,11 @@ def initial_load_action():
         "Initial Load"
     )
     return processed_img, initial_cached_array, initial_cached_url
+
+
+def print_event_data(label, comp_type, value):
+    print(f"{get_timestamp()} 🛎️  {comp_type} '{label}' event value: {value}")
+    return
 
 
 if __name__ == '__main__':
