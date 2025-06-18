@@ -414,7 +414,7 @@ def _load_or_use_cached_and_process(
         return None, new_cached_array, new_cached_url  # Removing image, updating cache
 
     params = _get_processing_params(cw, ch, effect, bright, contr, guidelines, guide_color_name, out_width)
-    processed_img = process_image(base_img_array=image_array_to_process, **params, source=source_log_msg)
+    processed_img = process_image(base_img_array=image_array_to_process, **params, image_url=final_url_to_process, source=source_log_msg)
     return processed_img, new_cached_array, new_cached_url
 
 

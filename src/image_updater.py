@@ -1,6 +1,8 @@
 import os
 import re
+
 import requests
+import gradio as gr
 
 from urllib.parse import urljoin
 
@@ -56,7 +58,7 @@ def get_image_url_from_item(item):
             return None
 
 
-def _fetch_image_url_with_regex(source_url, scraping_config):
+def _fetch_image_url_with_regex(source_url, scraping_config, gr=None):
     """
     Fetches image URL using regex patterns from scraping config.
 
@@ -126,6 +128,9 @@ def _fetch_image_url_with_regex(source_url, scraping_config):
 
     except requests.RequestException as e:
         print(f"Warning: Request failed for {source_url}: {e}")
+        if gr:
+            if hasattr(gr, 'Error'):
+                gr.Error(f"Request failed for '{source_url}': {e}")
     except re.error as e:
         print(f"Warning: Regex error for {source_url}: {e}")
     except Exception as e:
