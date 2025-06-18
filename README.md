@@ -78,6 +78,8 @@ img_array = np.array([
 
     Scraping selectors `image_selector_regex` are included in sample image metadata and can be utilized for any source, which returns SSR HTML with an image element or APIs returning JSON. For images, where scraped URL needs parsing, instructions `url_transform_regex` and `url_transform_replacement` also could be added to metadata.
 
+    Dog images are fully Open Source from [Stanford Dogs Dataset](http://vision.stanford.edu/aditya86/ImageNetDogs/), hosted by [https://dog.ceo/dog-api/](https://dog.ceo/dog-api/). Sources: [code](https://github.com/ElliottLandsborough/dog-ceo-api) ,[images](https://github.com/jigsawpieces/dog-api-images).
+
 2.  **Image Preparation**:
     *   The downloaded image is converted to a PIL Image object and then to a NumPy array.
     *   The NumPy array is padded using `np.pad` with `mode='edge'` so that its width and height are exact multiples of the user-defined `chunk_width` and `chunk_height`. As a cons, it results in _pixel stretching_ artefacts for large chunk sizes.
