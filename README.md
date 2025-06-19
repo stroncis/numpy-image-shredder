@@ -72,13 +72,13 @@ img_array = np.array([
 ### Actions:
 1.  **Image Download**: The application fetches an image from the provided URL using the `requests` library. A `User-Agent` header is used to mimic a browser request.
 
-    Initially application provides hand-picked image drop-down list. Images (with appropriate licenses) are fetched from a different sources. List items with "1️⃣" are single images and "🔄" means they are random images and can be randomized by pressing button "Reloadm image".
+    Initially application provides hand-picked image drop-down list. Images (with appropriate licenses) are fetched from a different sources. List items with "1️⃣" are single images and "🔄" means they are random images and can be randomized by pressing button "Reload image".
     
     Image stock platform StockCake constantly updates hashes in direct image urls so they should be checked and updated on each launch. To make it minimal, only `requests` library used with regex selector. There are some protections from automated browsing, so to simulate a user browser needed to add multiple headers which are sent usually by browsers and to unpack `response.text` added `brotli` library as `requests` does not include it.
 
     Scraping selectors `image_selector_regex` are included in sample image metadata and can be utilized for any source, which returns SSR HTML with an image element or APIs returning JSON. For images, where scraped URL needs parsing, instructions `url_transform_regex` and `url_transform_replacement` also could be added to metadata.
 
-    Dog images are fully Open Source from [Stanford Dogs Dataset](http://vision.stanford.edu/aditya86/ImageNetDogs/), hosted by [https://dog.ceo/dog-api/](https://dog.ceo/dog-api/). Sources: [code](https://github.com/ElliottLandsborough/dog-ceo-api) ,[images](https://github.com/jigsawpieces/dog-api-images).
+    Dog images are fully open oourced from [Stanford Dogs Dataset](http://vision.stanford.edu/aditya86/ImageNetDogs/), hosted by [https://dog.ceo/dog-api/](https://dog.ceo/dog-api/). Sources: [code](https://github.com/ElliottLandsborough/dog-ceo-api) ,[images](https://github.com/jigsawpieces/dog-api-images).
 
 2.  **Image Preparation**:
     *   The downloaded image is converted to a PIL Image object and then to a NumPy array.
@@ -88,7 +88,7 @@ img_array = np.array([
     *   **Vertical Shredding**: The padded image is sliced into vertical chunks. These chunks are then reassembled by first taking all even-indexed chunks and then all odd-indexed chunks, stacking them horizontally.
     *   **Horizontal Shredding**: The vertically shredded image is then sliced into horizontal chunks. These are reassembled similarly (even-indexed followed by odd-indexed), stacking them vertically to produce the final image.
 
-4.  **Color Effects Application (`utils.py -> apply_color_effect`)**: If a color effect other than "None" is selected, it's applied to the padded image array using NumPy. The image array is first converted to `np.float32` for calculations to prevent data loss or overflow, and then clipped back to the 0-255 range and converted to `np.uint8`. Effects descriptions:
+4.  **Color Effects Application (`utils.py -> apply_color_effect`)**: If a color effect other than "None" is selected, it's applied to the padded image array using NumPy. The image array is first converted to `np.float32` for calculations to prevent data loss or overflow, and then clipped back to the 0-255 range and converted to `np.uint8`. Though using [Pillow](https://pillow.readthedocs.io/en/stable/) (f.e grayscale, posterize, solarize etc.) would be more efficient, but this project's target is NumPy. Effects and transformations descriptions:
     *   **Invert Colors**: `255 - img_array`. NumPy performs element-wise subtraction of each pixel value from scalar 255, broadcasting to match `img` array shape. Another way is to use `~img` or `numpy.invert(img)` bitwise NOT, which would work on `uint8`, though it is less intuitively readable. Applying this to `img_copy` (which is `float32`) would be maybe slightly less performant but still correct, though `numpy.invert(img_copy)` - not.
 
     *   **Swap R/G Channels**: `swapped_img[..., 0], swapped_img[..., 1] = swapped_img[..., 1].copy(), swapped_img[..., 0].copy()`. NumPy's array slicing is used to select the Red and Green channels (0 and 1 respectively, on the last axis) and swap their contents.
@@ -137,7 +137,7 @@ img_array = np.array([
 ## Tech Stack
 
 *   **Python 3**
-*   **Gradio**: For creating the interactive web UI.
+*   **Gradio**: For creating the interactive and easily customizable web UI.
 *   **NumPy**: For numerical operations, primarily image manipulation as arrays (slicing, padding, stacking).
 *   **Requests**: For downloading images from URLs.
 *   **Matplotlib**: For generating and displaying the image outputs (original, intermediate, final).
