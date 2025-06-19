@@ -79,8 +79,8 @@ def process_image(
             f"Output image width must be a positive number. Received: '{output_image_width}'. Please enter a valid width (e.g., >= {MIN_VALID_OUTPUT_WIDTH}px)."
         )
 
-    if source:
-        print(f"{get_timestamp()} Processing image invoked from {source}")
+    # if source:
+    #     print(f"{get_timestamp()} Processing image invoked from {source}")
 
     padded_img = pad_image_to_fit_chunks(base_img_array, chunk_w, chunk_h)
     img_after_effects = apply_color_effect(padded_img, color_effect, brightness_offset, contrast_factor)

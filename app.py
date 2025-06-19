@@ -67,9 +67,9 @@ def run_app():
             )
 
             with gr.Row(equal_height=True):
-                input_field_url = gr.Textbox(label='Image URL', value=DEFAULT_IMAGE_URL, scale=6)
+                input_textbox_img_url = gr.Textbox(label='Image URL', value=DEFAULT_IMAGE_URL, scale=6)
                 input_button_update_image = gr.Button(
-                    "Reload image", scale=1, min_width=10, elem_classes=["load-button"])
+                    "Reload image", elem_id="Reload button", scale=1, min_width=10, elem_classes=["load-button"])
 
             with gr.Row():
                 input_slider_chunk_w = gr.Slider(
@@ -80,7 +80,7 @@ def run_app():
                     label='Chunk Width (px)',
                     scale=10
                 )
-                chunk_sliders_lock = gr.Checkbox(
+                input_checkbox_chunk_lock_ratio = gr.Checkbox(
                     label="🔒",
                     value=False,
                     scale=1,
@@ -129,27 +129,19 @@ def run_app():
         output_image_component = gr.Image(type='pil', show_label=False, format='png')
 
         with gr.Row():
-            input_button_reset_to_defaults = gr.Button("Reset to defaults")
+            input_button_reset_to_defaults = gr.Button("Reset to defaults", elem_id="Reset settings button")
 
         # --------------------------------* Event Handlers *--------------------------------
 
         all_input_components = [
-            input_dropdown_sample_images, input_field_url, input_slider_chunk_w,
-            input_slider_chunk_h, input_radio_color_effect,
+            input_dropdown_sample_images, input_textbox_img_url, input_button_update_image,
+            input_slider_chunk_w, input_checkbox_chunk_lock_ratio, input_slider_chunk_h, input_radio_color_effect,
             input_slider_brightness, input_slider_contrast, input_checkbox_show_guidelines,
-            input_radio_guideline_color, input_field_output_width
+            input_radio_guideline_color, input_field_output_width, input_button_reset_to_defaults
         ]
 
         for input_component in all_input_components:
-            input_component.change(
-                fn=print_event_data,
-                inputs=[
-                    gr.State(input_component.label or "Unknown Label"),
-                    gr.State(type(input_component).__name__),
-                    input_component
-                ],
-                outputs=None
-            )
+            print_event_data(input_component)
 
         inputs_for_processing_parameters = [
             input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
@@ -164,9 +156,9 @@ def run_app():
             is_batch_updating_state
         ]
 
-        slider_sync_triggers = [chunk_sliders_lock, input_slider_chunk_w]
+        slider_sync_triggers = [input_checkbox_chunk_lock_ratio, input_slider_chunk_w]
 
-        chunk_sliders_lock.change(
+        input_checkbox_chunk_lock_ratio.change(
             fn=lock_slider_ratio,
             inputs=[*slider_sync_triggers, input_slider_chunk_h],
             outputs=[chunk_delta_state, input_slider_chunk_h]
@@ -174,7 +166,7 @@ def run_app():
 
         input_slider_chunk_w.release(
             fn=sync_height_to_width,
-            inputs=[chunk_sliders_lock, input_slider_chunk_w, chunk_delta_state],
+            inputs=[input_checkbox_chunk_lock_ratio, input_slider_chunk_w, chunk_delta_state],
             outputs=[input_slider_chunk_h]
         )
 
@@ -188,7 +180,7 @@ def run_app():
             fn=_load_or_use_cached_and_process,
             inputs=[
                 input_dropdown_sample_images,
-                input_field_url, cached_image_url_state, cached_image_array_state,
+                input_textbox_img_url, cached_image_url_state, cached_image_array_state,
                 *inputs_for_processing_parameters,
                 gr.State(True), is_batch_updating_state,  # force_download=True, batch_active
                 gr.State("Update Button")
@@ -228,7 +220,7 @@ def run_app():
                 is_batch_updating_state
             ],
             outputs=[
-                input_field_url, input_slider_brightness, input_slider_contrast,
+                input_textbox_img_url, input_slider_brightness, input_slider_contrast,
                 input_checkbox_show_guidelines, input_radio_guideline_color,
                 output_image_component,
                 cached_image_array_state, cached_image_url_state
@@ -243,7 +235,7 @@ def run_app():
             fn=clear_all_and_reload_default_action,
             inputs=[is_batch_updating_state],
             outputs=[
-                input_field_url, input_slider_chunk_w, input_slider_chunk_h,
+                input_textbox_img_url, input_slider_chunk_w, input_slider_chunk_h,
                 input_radio_color_effect, input_slider_brightness, input_slider_contrast,
                 input_checkbox_show_guidelines, input_radio_guideline_color, input_field_output_width,
                 input_dropdown_sample_images,
@@ -414,7 +406,8 @@ def _load_or_use_cached_and_process(
         return None, new_cached_array, new_cached_url  # Removing image, updating cache
 
     params = _get_processing_params(cw, ch, effect, bright, contr, guidelines, guide_color_name, out_width)
-    processed_img = process_image(base_img_array=image_array_to_process, **params, image_url=final_url_to_process, source=source_log_msg)
+    processed_img = process_image(base_img_array=image_array_to_process, **params,
+                                  image_url=final_url_to_process, source=source_log_msg)
     return processed_img, new_cached_array, new_cached_url
 
 
@@ -567,8 +560,54 @@ def sync_height_to_width(is_locked, width_val, delta):
         return gr.skip()
 
 
-def print_event_data(label, comp_type, value):
-    print(f"{get_timestamp()} 🛎️  {comp_type} '{label}' event value: {value}")
+def print_event_data(input_component):
+    def print_event_string(label, comp_type, event_type, value):
+        print(f"{get_timestamp()} 🛎️  {event_type} from {comp_type} '{label}' event value: {value}")
+
+    if isinstance(input_component, gr.Button):
+        input_component.click(
+            fn=print_event_string,
+            inputs=[
+                gr.State(input_component.elem_id or "Unknown Id"),
+                gr.State(type(input_component).__name__),
+                gr.State("click"),
+                input_component
+            ],
+            outputs=None
+        )
+    elif isinstance(input_component, gr.Textbox):
+        input_component.submit(
+            fn=print_event_string,
+            inputs=[
+                gr.State(input_component.label or "Unknown Label"),
+                gr.State(type(input_component).__name__),
+                gr.State("submit"),
+                input_component
+            ],
+            outputs=None
+        )
+    elif isinstance(input_component, gr.Slider):
+        input_component.release(
+            fn=print_event_string,
+            inputs=[
+                gr.State(input_component.label or "Unknown Label"),
+                gr.State(type(input_component).__name__),
+                gr.State("release"),
+                input_component
+            ],
+            outputs=None
+        )
+    else:
+        input_component.change(
+            fn=print_event_string,
+            inputs=[
+                gr.State(input_component.label or "Unknown Label"),
+                gr.State(type(input_component).__name__),
+                gr.State("change"),
+                input_component
+            ],
+            outputs=None
+        )
     return
 
 
