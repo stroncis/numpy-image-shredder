@@ -2,17 +2,20 @@ import gradio as gr
 import numpy as np
 from gradio.themes.utils import sizes as theme_sizes  # Because Gradio lookup fails
 
-from src.utils import process_image, get_timestamp, download_image
+from src.utils import (
+    process_image, get_timestamp, download_image, print_event_data, lock_slider_ratio,
+    sync_height_to_width, set_default_choice_str
+)
 from src.image_updater import get_image_url_from_item
 from src.config import (
     DEFAULT_IMAGE_URL, DEFAULT_CHUNK_W, DEFAULT_CHUNK_H,
     MIN_CHUNK_SIZE_PX, INITIAL_MAX_CHUNK_PX, CHUNK_STEP_PX,
     SAMPLE_IMAGES_DATA, COLOR_EFFECTS, DEFAULT_COLOR_EFFECT,
     DEFAULT_BRIGHTNESS, DEFAULT_CONTRAST, DEFAULT_SHOW_GUIDELINES,
-    GUIDELINE_COLORS, DEFAULT_GUIDELINE_COLOR_NAME, OUTPUT_IMAGE_WIDTH_IN_PIXELS, MIN_VALID_OUTPUT_WIDTH
+    GUIDELINE_COLORS, DEFAULT_GUIDELINE_COLOR_NAME,
+    OUTPUT_IMAGE_WIDTH_IN_PIXELS, MIN_VALID_OUTPUT_WIDTH,
+    sample_image_choices
 )
-
-sample_image_choices = [f"{item['name']} - {item['description']}" for item in SAMPLE_IMAGES_DATA]
 
 
 def run_app():
@@ -262,16 +265,6 @@ def update_url_from_sample(selected_choice_str):
         if f"{item['name']} - {item['description']}" == selected_choice_str:
             return item["image_url"], DEFAULT_BRIGHTNESS, DEFAULT_CONTRAST, DEFAULT_SHOW_GUIDELINES, DEFAULT_GUIDELINE_COLOR_NAME
     return DEFAULT_IMAGE_URL, DEFAULT_BRIGHTNESS, DEFAULT_CONTRAST, DEFAULT_SHOW_GUIDELINES, DEFAULT_GUIDELINE_COLOR_NAME
-
-
-def set_default_choice_str():
-    _default_choice_str = ""
-    for item in SAMPLE_IMAGES_DATA:
-        # if item["image_url"] == DEFAULT_IMAGE_URL:
-        if item.get("image_url") == DEFAULT_IMAGE_URL:
-            _default_choice_str = f"{item['name']} - {item['description']}"
-            break
-    return _default_choice_str if _default_choice_str else (sample_image_choices[0] if sample_image_choices else "")
 
 
 def _get_processing_params(cw, ch, effect, bright, contr, guidelines, guide_color_name, out_width):
@@ -526,7 +519,7 @@ def initial_load_action():
     Load the initial image when the app starts.
     This is called when the app is first loaded.
     """
-    print(f"{get_timestamp()} Initial application load.")
+    print(f"{get_timestamp()} Initial image load.")
 
     default_choice_str = set_default_choice_str()
     processed_img, initial_cached_array, initial_cached_url = _load_or_use_cached_and_process(
@@ -540,75 +533,6 @@ def initial_load_action():
         "Initial Load"
     )
     return processed_img, initial_cached_array, initial_cached_url
-
-
-def lock_slider_ratio(is_locked, width_val, height_val):
-    if is_locked:
-        delta = height_val - width_val
-        return delta, gr.update(interactive=False)
-    else:
-        return 0, gr.update(interactive=True)
-
-
-def sync_height_to_width(is_locked, width_val, delta):
-    if is_locked:
-        new_height = width_val + delta
-        # Clamping values
-        new_height = np.clip(new_height, MIN_CHUNK_SIZE_PX, INITIAL_MAX_CHUNK_PX)
-        return gr.update(value=new_height)
-    else:
-        return gr.skip()
-
-
-def print_event_data(input_component):
-    def print_event_string(label, comp_type, event_type, value):
-        print(f"{get_timestamp()} 🛎️  {event_type} from {comp_type} '{label}' event value: {value}")
-
-    if isinstance(input_component, gr.Button):
-        input_component.click(
-            fn=print_event_string,
-            inputs=[
-                gr.State(input_component.elem_id or "Unknown Id"),
-                gr.State(type(input_component).__name__),
-                gr.State("click"),
-                input_component
-            ],
-            outputs=None
-        )
-    elif isinstance(input_component, gr.Textbox):
-        input_component.submit(
-            fn=print_event_string,
-            inputs=[
-                gr.State(input_component.label or "Unknown Label"),
-                gr.State(type(input_component).__name__),
-                gr.State("submit"),
-                input_component
-            ],
-            outputs=None
-        )
-    elif isinstance(input_component, gr.Slider):
-        input_component.release(
-            fn=print_event_string,
-            inputs=[
-                gr.State(input_component.label or "Unknown Label"),
-                gr.State(type(input_component).__name__),
-                gr.State("release"),
-                input_component
-            ],
-            outputs=None
-        )
-    else:
-        input_component.change(
-            fn=print_event_string,
-            inputs=[
-                gr.State(input_component.label or "Unknown Label"),
-                gr.State(type(input_component).__name__),
-                gr.State("change"),
-                input_component
-            ],
-            outputs=None
-        )
-    return
 
 
 if __name__ == '__main__':

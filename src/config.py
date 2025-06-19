@@ -35,6 +35,7 @@ GUIDELINE_COLORS = {
 DEFAULT_GUIDELINE_COLOR_NAME = "Red"
 
 SAMPLE_IMAGES_DATA = DEFAULT_SAMPLE_IMAGES_DATA  # get_updated_sample_images()
+sample_image_choices = [f"{item['name']} - {item['description']}" for item in SAMPLE_IMAGES_DATA]
 
 if SAMPLE_IMAGES_DATA:
     first_item = SAMPLE_IMAGES_DATA[0]
