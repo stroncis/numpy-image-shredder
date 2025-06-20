@@ -57,6 +57,7 @@ def run_app():
 
         cached_image_array_state = gr.State(None)
         cached_image_url_state = gr.State(None)
+        is_custom_url_state = gr.State(False)
         chunk_delta_state = gr.State(0)
 
         # --------------------------------* UI Input Components *--------------------------------
@@ -153,34 +154,54 @@ def run_app():
         input_dropdown_sample_images.change(
             fn=fetch_and_process_image,
             inputs=[
-                input_dropdown_sample_images, input_textbox_img_url,
+                is_custom_url_state, input_dropdown_sample_images, input_textbox_img_url,
                 input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
                 input_slider_brightness, input_slider_contrast,
                 input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width
             ],
-            outputs=[output_image_component, input_textbox_img_url, cached_image_array_state, cached_image_url_state]
+            outputs=[
+                output_image_component, input_textbox_img_url, cached_image_array_state,
+                cached_image_url_state, is_custom_url_state, input_button_update_image
+                ]
         )
 
         input_button_update_image.click(
             fn=fetch_and_process_image,
             inputs=[
-                input_dropdown_sample_images, input_textbox_img_url,
+                is_custom_url_state, input_dropdown_sample_images, input_textbox_img_url,
                 input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
                 input_slider_brightness, input_slider_contrast,
                 input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width
             ],
-            outputs=[output_image_component, input_textbox_img_url, cached_image_array_state, cached_image_url_state]
+            outputs=[
+                output_image_component, input_textbox_img_url, cached_image_array_state,
+                cached_image_url_state, is_custom_url_state, input_button_update_image
+                ]
+        )
+
+        # def on_url_input(url):
+        #     print(f"💬 Image URL input: {url}")
+        #     return [True, "Load image"]  # Tuples also accepted
+        input_textbox_img_url.input(
+            # fn=on_url_input,
+            # inputs=[input_textbox_img_url],
+            fn=lambda: (True, "Load image"),
+            inputs=[],
+            outputs=[is_custom_url_state, input_button_update_image]
         )
 
         input_textbox_img_url.submit(
             fn=fetch_and_process_image,
             inputs=[
-                input_dropdown_sample_images, input_textbox_img_url,
+                is_custom_url_state, input_dropdown_sample_images, input_textbox_img_url,
                 input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
                 input_slider_brightness, input_slider_contrast,
                 input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width
             ],
-            outputs=[output_image_component, input_textbox_img_url, cached_image_array_state, cached_image_url_state]
+            outputs=[
+                output_image_component, input_textbox_img_url, cached_image_array_state,
+                cached_image_url_state, is_custom_url_state, input_button_update_image
+                ]
         )
 
         for input_component in [
@@ -219,7 +240,8 @@ def run_app():
                 input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
                 input_slider_brightness, input_slider_contrast,
                 input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width,
-                output_image_component, cached_image_array_state, cached_image_url_state
+                output_image_component, cached_image_array_state, cached_image_url_state,
+                is_custom_url_state, input_button_update_image
             ]
         )
 
@@ -245,7 +267,8 @@ def run_app():
                 input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
                 input_slider_brightness, input_slider_contrast,
                 input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width,
-                output_image_component, cached_image_array_state, cached_image_url_state
+                output_image_component, cached_image_array_state, cached_image_url_state,
+                is_custom_url_state, input_button_update_image
             ]
         )
 
@@ -260,6 +283,7 @@ def redraw_if_guidelines(show_guidelines, *args):
 
 
 def fetch_and_process_image(
+    is_custom_url,
     selected_sample_choice_str,
     url_from_input_field,
     chunk_w, chunk_h, color_effect,
@@ -274,19 +298,19 @@ def fetch_and_process_image(
         validate_inputs(chunk_w, chunk_h, brightness_offset, contrast_factor, output_image_width)
 
         image_url = url_from_input_field
-        used_sample = None
 
-        if selected_sample_choice_str:
+        if not is_custom_url and selected_sample_choice_str:
+            current_sample = None
             for item in SAMPLE_IMAGES_DATA:
                 if f"{item['name']} - {item['description']}" == selected_sample_choice_str:
-                    used_sample = item
+                    current_sample = item
                     break
 
-        if used_sample:
-            if used_sample.get("scraping"):
-                image_url = get_image_url_from_item(used_sample)
-            else:
-                image_url = used_sample.get("image_url") or used_sample.get("source_url")
+            if current_sample:
+                if current_sample.get("scraping"):
+                    image_url = get_image_url_from_item(current_sample)
+                else:
+                    image_url = current_sample.get("image_url") or current_sample.get("source_url")
 
         try:
             img_array = download_image(image_url)
@@ -306,7 +330,7 @@ def fetch_and_process_image(
             output_image_width=output_image_width,
             image_url=image_url
         )
-        return processed_img, image_url, img_array, image_url
+        return processed_img, image_url, img_array, image_url, False, "Reload image"
     except gr.Error:
         raise
     except Exception as e:
@@ -363,7 +387,8 @@ def reset_inputs_and_redraw():
     default_guideline_color = DEFAULT_GUIDELINE_COLOR_NAME
     default_output_width = OUTPUT_IMAGE_WIDTH_IN_PIXELS
 
-    processed_img, image_url, img_array, cached_url = fetch_and_process_image(
+    processed_img, image_url, img_array, cached_url, is_custom_url, reload_button_text = fetch_and_process_image(
+        False,
         default_choice_str, default_url,
         default_chunk_w, default_chunk_h, default_color_effect,
         default_brightness, default_contrast,
@@ -374,9 +399,9 @@ def reset_inputs_and_redraw():
         default_choice_str, image_url, default_chunk_w, default_chunk_h,
         default_color_effect, default_brightness, default_contrast,
         default_show_guidelines, default_guideline_color, default_output_width,
-        processed_img, img_array, cached_url
+        processed_img, img_array, cached_url,
+        is_custom_url, reload_button_text
     )
-
 
 if __name__ == '__main__':
     run_app()
