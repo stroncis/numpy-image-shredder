@@ -180,7 +180,6 @@ def process_image(
 def apply_color_effect(img, effect, brightness_offset, contrast_factor):
     img_temp_float = img.astype(np.float32)
 
-    # 1. Apply the base color effect
     if effect == "Invert Colors":
         img_temp_float = 255 - img_temp_float
     elif effect == "Swap R/G Channels":
@@ -193,7 +192,10 @@ def apply_color_effect(img, effect, brightness_offset, contrast_factor):
         img_temp_float = temp_red
     elif effect == "Grayscale":
         gray_img_single_channel = np.mean(img_temp_float, axis=2, keepdims=True)
+        # Converting to 3-channel grayscale image. It is "stupid" way to do, but otherwise Matplotlib will colormap it
         img_temp_float = np.repeat(gray_img_single_channel, 3, axis=2)
+    elif effect == "Grayscale 1 Channel":
+        img_temp_float = np.mean(img_temp_float, axis=2, keepdims=True)
     elif effect == "Sepia":
         if img_temp_float.shape[2] < 3:
             # Sepia requires all channels
@@ -212,11 +214,9 @@ def apply_color_effect(img, effect, brightness_offset, contrast_factor):
         condition = img_temp_float >= threshold
         img_temp_float[condition] = 255 - img_temp_float[condition]
 
-    # 2. Apply Brightness
     if brightness_offset != 0:
         img_temp_float = img_temp_float + brightness_offset
 
-    # 3. Apply Contrast
     if contrast_factor != 1.0:
         img_temp_float = 128 + contrast_factor * (img_temp_float - 128)
 

@@ -45,8 +45,8 @@ else:
 
 # Effects for Radio buttons
 COLOR_EFFECTS = [
-    "None", "Invert Colors", "Swap R/G Channels", "Red Channel Only", "Grayscale",
-    "Sepia", "Solarize"
+    "None", "Invert Colors", "Swap R/G Channels", "Red Channel Only",
+    "Grayscale", "Grayscale 1 Channel", "Sepia", "Solarize"
 ]
 DEFAULT_COLOR_EFFECT = "None"
 

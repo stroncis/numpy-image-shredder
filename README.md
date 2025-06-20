@@ -27,6 +27,7 @@ Optionally added some extra features, numpy processing for color channels.
     *   Swap R/G Channels
     *   Red Channel Only
     *   Grayscale
+    *   Grayscale 1 Channel
     *   Sepia
     *   Brightness Up/Down
     *   Contrast Up/Down
@@ -97,7 +98,9 @@ img_array = np.array([
 
     *   **Grayscale**: `gray_img = np.mean(img_copy, axis=2, keepdims=True)`. NumPy calculates the mean pixel value across the color channels (axis 2) for each pixel. `keepdims=True` maintains the third dimension, and the result is then broadcasted across three channels using `np.repeat(gray_img, 3, axis=2)`.
 
-        **Why three identical channels** - when Matplotlib receives a single channel image array, it applies colormapping (`viridis` by default, blue-green-yellow gradient), so to make a grayscale image and display ir correctly, we have to keep all channels.
+        **Why three identical channels** - when Matplotlib receives a single channel image array, it applies color mapping (`viridis` by default, blue-green-yellow gradient), so to make a grayscale image and display ir correctly, we have to keep all channels.
+
+    *   **Grayscale 1 Channel**: Leaving 1 channel to demonstrate how Matplotlib applies `[viridis](https://matplotlib.org/stable/users/explain/colors/colormaps.html)` [colormap](https://matplotlib.org/stable/users/explain/colors/colormaps.html).
 
     *   **Sepia**: Effect immitates aged photo prints, which naturally appears due to chemical changes, like silver sulfides, paper aging and others. A standard sepia transformation matrix (3x3, sepia kernel) is applied. For each pixel, the new R, G, B values are linear combinations of the original R, G, B values (e.g., `R_new = R_orig*0.393 + G_orig*0.769 + B_orig*0.189`). This is achieved through element-wise multiplication and addition on NumPy arrays representing the individual channels.
 
