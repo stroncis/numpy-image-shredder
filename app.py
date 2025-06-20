@@ -4,7 +4,7 @@ from gradio.themes.utils import sizes as theme_sizes  # Because Gradio lookup fa
 
 from src.utils import (
     process_image, download_image, print_event_data, set_default_choice_str,
-    lock_slider_ratio, sync_height_to_width
+    lock_slider_ratio, sync_height_to_width, validate_inputs
 )
 from src.image_updater import get_image_url_from_item
 from src.config import (
@@ -266,9 +266,11 @@ def fetch_and_process_image(
         Returns: processed_img, new_image_url, new_cached_array, new_cached_url
     """
     try:
+        validate_inputs(chunk_w, chunk_h, brightness_offset, contrast_factor, output_image_width)
+
         image_url = url_from_input_field
         used_sample = None
-
+        
         if selected_sample_choice_str:
             for item in SAMPLE_IMAGES_DATA:
                 if f"{item['name']} - {item['description']}" == selected_sample_choice_str:
@@ -290,7 +292,7 @@ def fetch_and_process_image(
             guideline_color_name, GUIDELINE_COLORS[DEFAULT_GUIDELINE_COLOR_NAME]), dtype=np.uint8)
         processed_img = process_image(
             base_img_array=img_array,
-            chunk_w=int(chunk_w), chunk_h=int(chunk_h),
+            chunk_w=chunk_w, chunk_h=chunk_h,
             color_effect=color_effect,
             brightness_offset=brightness_offset,
             contrast_factor=contrast_factor,
@@ -305,6 +307,7 @@ def fetch_and_process_image(
     except Exception as e:
         raise gr.Error(f"An unexpected error occurred: {e}", duration=DEFAULT_ERROR_DURATION)
 
+
 def redraw_image(
     img_array, image_url,
     chunk_w, chunk_h, color_effect,
@@ -314,23 +317,29 @@ def redraw_image(
     """
     Processes the already-fetched image with new parameters.
     """
-    if img_array is None:
-        raise gr.Error("No image loaded. Please fetch an image first.", duration=DEFAULT_ERROR_DURATION)
+    try:
+        validate_inputs(chunk_w, chunk_h, brightness_offset, contrast_factor, output_image_width)
+        if img_array is None:
+            raise gr.Error("No image loaded. Please fetch an image first.", duration=DEFAULT_ERROR_DURATION)
 
-    guideline_color_rgb = np.array(GUIDELINE_COLORS.get(
-        guideline_color_name, GUIDELINE_COLORS[DEFAULT_GUIDELINE_COLOR_NAME]), dtype=np.uint8)
-    processed_img = process_image(
-        base_img_array=img_array,
-        chunk_w=int(chunk_w), chunk_h=int(chunk_h),
-        color_effect=color_effect,
-        brightness_offset=brightness_offset,
-        contrast_factor=contrast_factor,
-        show_guidelines=show_guidelines,
-        guideline_color_rgb_array=guideline_color_rgb,
-        output_image_width=output_image_width,
-        image_url=image_url
-    )
-    return processed_img, img_array, image_url
+        guideline_color_rgb = np.array(GUIDELINE_COLORS.get(
+            guideline_color_name, GUIDELINE_COLORS[DEFAULT_GUIDELINE_COLOR_NAME]), dtype=np.uint8)
+        processed_img = process_image(
+            base_img_array=img_array,
+            chunk_w=chunk_w, chunk_h=chunk_h,
+            color_effect=color_effect,
+            brightness_offset=brightness_offset,
+            contrast_factor=contrast_factor,
+            show_guidelines=show_guidelines,
+            guideline_color_rgb_array=guideline_color_rgb,
+            output_image_width=output_image_width,
+            image_url=image_url
+        )
+        return processed_img, img_array, image_url
+    except gr.Error:
+        raise
+    except Exception as e:
+        raise gr.Error(f"An unexpected error occurred: {e}", duration=DEFAULT_ERROR_DURATION)
 
 
 def initial_load_action():

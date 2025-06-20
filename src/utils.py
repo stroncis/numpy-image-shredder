@@ -74,6 +74,53 @@ def pad_image_to_fit_chunks(img, chunk_width, chunk_height):
     return padded_img
 
 
+def validate_inputs(
+    chunk_w, chunk_h, brightness_offset, contrast_factor, output_image_width
+):
+    """
+    Validate the input parameters for the image processing function.
+    Raises gr.Error with appropriate messages if validation fails.
+    """
+    try:
+        chunk_w = int(chunk_w)
+        chunk_h = int(chunk_h)
+    except (TypeError, ValueError):
+        raise gr.Error(
+            "Chunk width and height must be valid integer numbers. Please check your input.",
+            duration=DEFAULT_ERROR_DURATION
+        )
+
+    if chunk_w < 2 or chunk_h < 2:
+        raise gr.Error(
+            "Chunk size too small. Minimum is 2px.",
+            duration=DEFAULT_ERROR_DURATION
+        )
+
+    try:
+        brightness_offset = int(brightness_offset)
+    except (TypeError, ValueError):
+        raise gr.Error(
+            "Brightness must be valid integer number. Please check your input.",
+            duration=DEFAULT_ERROR_DURATION
+        )
+
+    try:
+        contrast_factor = float(contrast_factor)
+    except (TypeError, ValueError):
+        raise gr.Error(
+            "Contrast must be valid float number. Please check your input.",
+            duration=DEFAULT_ERROR_DURATION
+        )
+
+    try:
+        output_image_width = int(output_image_width)
+    except (TypeError, ValueError):
+        raise gr.Error(
+            "Output image width must be a valid integer number. Please check your input.",
+            duration=DEFAULT_ERROR_DURATION
+        )
+
+
 def process_image(
     base_img_array,
     chunk_w,
@@ -87,10 +134,17 @@ def process_image(
     image_url=None,
     caller=None
 ):
+    """
+        Process the input image by applying shredding and color effects.
+        Returns the processed image as a PIL Image object.
+        Raises gr.Error with appropriate messages if validation fails or processing errors occur.
+    """
+    try:
+        validate_inputs(chunk_w, chunk_h, brightness_offset, contrast_factor, output_image_width)
+    except gr.Error as e:
+        raise e
     if base_img_array is None or not isinstance(base_img_array, np.ndarray):
         raise gr.Error("No image loaded or invalid image data.", duration=DEFAULT_ERROR_DURATION)
-    if chunk_w < MIN_CHUNK_SIZE_PX or chunk_h < MIN_CHUNK_SIZE_PX:
-        raise gr.Error(f"Chunk size too small. Minimum is {MIN_CHUNK_SIZE_PX}px.", duration=DEFAULT_ERROR_DURATION)
 
     if output_image_width is None or not isinstance(output_image_width, (int, float)) or output_image_width < MIN_VALID_OUTPUT_WIDTH:
         raise gr.Error(
