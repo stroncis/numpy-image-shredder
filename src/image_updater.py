@@ -6,6 +6,7 @@ import gradio as gr
 
 from urllib.parse import urljoin
 
+from src.config import DEFAULT_ERROR_DURATION
 from .sample_image_metadata import DEFAULT_SAMPLE_IMAGES_DATA
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -96,7 +97,10 @@ def _fetch_image_url_with_regex(source_url, scraping_config, gr=None):
 
         match = re.search(image_selector_regex, html_content, re.DOTALL | re.IGNORECASE)
         if not match:
-            print(f"Warning: Could not find image URL using regex pattern for {source_url}")
+            message_text = f"Could not find image URL using regex pattern for {source_url}"
+            print(f"Warning: {message_text}")
+            if gr:
+                raise gr.Error(message_text, duration=DEFAULT_ERROR_DURATION)
             return None
 
         found_url = match.group(1)
@@ -109,7 +113,7 @@ def _fetch_image_url_with_regex(source_url, scraping_config, gr=None):
         if url_transform_regex and url_transform_replacement:
             transformed_url = re.sub(url_transform_regex, url_transform_replacement, found_url)
             if transformed_url != found_url:
-                print(f"Info: Transformed URL from {found_url} to {transformed_url}")
+                print(f"Info: Transformed extracted URL to {transformed_url}")
                 found_url = transformed_url
 
         # URL normalization
@@ -130,7 +134,7 @@ def _fetch_image_url_with_regex(source_url, scraping_config, gr=None):
         print(f"Warning: Request failed for {source_url}: {e}")
         if gr:
             if hasattr(gr, 'Error'):
-                gr.Error(f"Request failed for '{source_url}': {e}")
+                raise gr.Error(f"Request failed for '{source_url}': {e}", duration=DEFAULT_ERROR_DURATION)
     except re.error as e:
         print(f"Warning: Regex error for {source_url}: {e}")
     except Exception as e:

@@ -11,9 +11,7 @@ from src.shredder import shred_image
 from .config import (
     OUTPUT_IMAGE_DPI, OUTPUT_IMAGE_ASPECT_RATIO, OUTPUT_IMAGE_WIDTH_IN_PIXELS,
     MIN_VALID_OUTPUT_WIDTH, DEFAULT_TITLE_FONT_SIZE, MIN_CHUNK_SIZE_PX, INITIAL_MAX_CHUNK_PX,
-    SAMPLE_IMAGES_DATA, DEFAULT_IMAGE_URL, DEFAULT_CHUNK_W, DEFAULT_CHUNK_H,
-    DEFAULT_COLOR_EFFECT, DEFAULT_BRIGHTNESS, DEFAULT_CONTRAST, DEFAULT_SHOW_GUIDELINES,
-    DEFAULT_GUIDELINE_COLOR_NAME, sample_image_choices
+    SAMPLE_IMAGES_DATA, DEFAULT_IMAGE_URL, DEFAULT_ERROR_DURATION, SAMPLE_IMAGE_CHOICES
 )
 
 # fmt: off
@@ -38,22 +36,29 @@ def download_image(url):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
     }
-    response = requests.get(url, headers=headers)
+    try:
+        response = requests.get(url, headers=headers)
+    except Exception as e:
+        print(f"Error downloading image from URL: {url}\nError: {e}")
+        raise gr.Error(f"Failed to download image from URL: {url}\nError: {e}", duration=DEFAULT_ERROR_DURATION)
 
     if response.status_code != 200:
-        raise ValueError(f"Failed to download image. Status code: {response.status_code} from URL: {url}")
+        print(f"Failed to download image. Received status code {response.status_code} for URL: {url}")
+        raise gr.Error(f"Failed to download image. Status code: {response.status_code} from URL: {url}", duration=DEFAULT_ERROR_DURATION)
 
     content_type = response.headers.get('Content-Type', '').lower()
     if not content_type.startswith('image/'):
         print(f"Warning: Content-Type is '{content_type}', which might not be an image. URL: {url}")
+        raise gr.Error(f"URL does not point to an image. Content-Type: '{content_type}'. URL: {url}", duration=DEFAULT_ERROR_DURATION)
 
     try:
         img = Image.open(BytesIO(response.content)).convert('RGB')
     except UnidentifiedImageError:
-        raise UnidentifiedImageError(
+        raise gr.Error(
             f"Cannot identify image file from URL: {url}. "
             f"Content-Type: {content_type}. "
-            "Please ensure the URL points directly to an image file (e.g., .jpg, .png)."
+            "Please ensure the URL points directly to an image file (e.g., .jpg, .png).",
+            duration=DEFAULT_ERROR_DURATION
         )
     return np.array(img)
 
@@ -78,15 +83,21 @@ def process_image(
     guideline_color_rgb_array,
     output_image_width,
     image_url=None,
-    source=None
+    caller=None
 ):
+    if base_img_array is None or not isinstance(base_img_array, np.ndarray):
+        raise gr.Error("No image loaded or invalid image data.", duration=DEFAULT_ERROR_DURATION)
+    if chunk_w < MIN_CHUNK_SIZE_PX or chunk_h < MIN_CHUNK_SIZE_PX:
+        raise gr.Error(f"Chunk size too small. Minimum is {MIN_CHUNK_SIZE_PX}px.", duration=DEFAULT_ERROR_DURATION)
+
     if output_image_width is None or not isinstance(output_image_width, (int, float)) or output_image_width < MIN_VALID_OUTPUT_WIDTH:
         raise gr.Error(
-            f"Output image width must be a positive number. Received: '{output_image_width}'. Please enter a valid width (e.g., >= {MIN_VALID_OUTPUT_WIDTH}px)."
+            f"Output image width must be a positive number. Received: '{output_image_width}'. Please enter a valid width (e.g., >= {MIN_VALID_OUTPUT_WIDTH}px).",
+            duration=DEFAULT_ERROR_DURATION
         )
 
-    # if source:
-    #     print(f"{get_timestamp()} Processing image invoked from {source}")
+    # if caller:
+    #     print(f"{get_timestamp()} Processing image invoked from {caller} with URL: {image_url}")
 
     padded_img = pad_image_to_fit_chunks(base_img_array, chunk_w, chunk_h)
     img_after_effects = apply_color_effect(padded_img, color_effect, brightness_offset, contrast_factor)
@@ -123,7 +134,7 @@ def process_image(
 
     current_dpi = OUTPUT_IMAGE_DPI
     if current_dpi == 0:
-        raise gr.Error("Output Image DPI in configuration cannot be zero.")
+        raise gr.Error("Output Image DPI in configuration cannot be zero.", duration=DEFAULT_ERROR_DURATION)
 
     padded_h, padded_w, _ = padded_img.shape
     if padded_h == 0 or padded_w == 0:
@@ -139,7 +150,8 @@ def process_image(
     if fig_w <= 0 or fig_h <= 0:
         raise gr.Error(
             f"Calculated figure dimensions are invalid (width: {fig_w:.2f}in, height: {fig_h:.2f}in). "
-            f"Please check output width ({output_image_width}px) and aspect ratio ({OUTPUT_IMAGE_ASPECT_RATIO})."
+            f"Please check output width ({output_image_width}px) and aspect ratio ({OUTPUT_IMAGE_ASPECT_RATIO}).",
+            duration=DEFAULT_ERROR_DURATION
         )
 
     fig, axs = plt.subplots(1, 3, figsize=(fig_w, fig_h), dpi=current_dpi)
@@ -252,11 +264,10 @@ def set_default_choice_str():
     """
     _default_choice_str = ""
     for item in SAMPLE_IMAGES_DATA:
-        # if item["image_url"] == DEFAULT_IMAGE_URL:
         if item.get("image_url") == DEFAULT_IMAGE_URL:
             _default_choice_str = f"{item['name']} - {item['description']}"
             break
-    return _default_choice_str if _default_choice_str else (sample_image_choices[0] if sample_image_choices else "")
+    return _default_choice_str if _default_choice_str else (SAMPLE_IMAGE_CHOICES[0] if SAMPLE_IMAGE_CHOICES else "")
 
 
 def lock_slider_ratio(is_locked, width_val, height_val):

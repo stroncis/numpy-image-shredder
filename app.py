@@ -14,7 +14,7 @@ from src.config import (
     DEFAULT_BRIGHTNESS, DEFAULT_CONTRAST, DEFAULT_SHOW_GUIDELINES,
     GUIDELINE_COLORS, DEFAULT_GUIDELINE_COLOR_NAME,
     OUTPUT_IMAGE_WIDTH_IN_PIXELS, MIN_VALID_OUTPUT_WIDTH,
-    SAMPLE_IMAGE_CHOICES
+    DEFAULT_ERROR_DURATION, SAMPLE_IMAGE_CHOICES
 )
 
 
@@ -265,42 +265,45 @@ def fetch_and_process_image(
         Fetches (scrapes if needed) and processes the image.
         Returns: processed_img, new_image_url, new_cached_array, new_cached_url
     """
-    image_url = url_from_input_field
-    used_sample = None
-
-    if selected_sample_choice_str:
-        for item in SAMPLE_IMAGES_DATA:
-            if f"{item['name']} - {item['description']}" == selected_sample_choice_str:
-                used_sample = item
-                break
-
-    if used_sample:
-        if used_sample.get("scraping"):
-            image_url = get_image_url_from_item(used_sample)
-        else:
-            image_url = used_sample.get("image_url") or used_sample.get("source_url")
-
     try:
-        img_array = download_image(image_url)
+        image_url = url_from_input_field
+        used_sample = None
+
+        if selected_sample_choice_str:
+            for item in SAMPLE_IMAGES_DATA:
+                if f"{item['name']} - {item['description']}" == selected_sample_choice_str:
+                    used_sample = item
+                    break
+
+        if used_sample:
+            if used_sample.get("scraping"):
+                image_url = get_image_url_from_item(used_sample)
+            else:
+                image_url = used_sample.get("image_url") or used_sample.get("source_url")
+
+        try:
+            img_array = download_image(image_url)
+        except Exception as e:
+            raise gr.Error(f"Error downloading image: {str(e)}", duration=DEFAULT_ERROR_DURATION)
+
+        guideline_color_rgb = np.array(GUIDELINE_COLORS.get(
+            guideline_color_name, GUIDELINE_COLORS[DEFAULT_GUIDELINE_COLOR_NAME]), dtype=np.uint8)
+        processed_img = process_image(
+            base_img_array=img_array,
+            chunk_w=int(chunk_w), chunk_h=int(chunk_h),
+            color_effect=color_effect,
+            brightness_offset=brightness_offset,
+            contrast_factor=contrast_factor,
+            show_guidelines=show_guidelines,
+            guideline_color_rgb_array=guideline_color_rgb,
+            output_image_width=output_image_width,
+            image_url=image_url
+        )
+        return processed_img, image_url, img_array, image_url
+    except gr.Error:
+        raise
     except Exception as e:
-        gr.Error(f"Error downloading image: {str(e)}")
-        return None, image_url, None, image_url
-
-    guideline_color_rgb = np.array(GUIDELINE_COLORS.get(
-        guideline_color_name, GUIDELINE_COLORS[DEFAULT_GUIDELINE_COLOR_NAME]), dtype=np.uint8)
-    processed_img = process_image(
-        base_img_array=img_array,
-        chunk_w=int(chunk_w), chunk_h=int(chunk_h),
-        color_effect=color_effect,
-        brightness_offset=brightness_offset,
-        contrast_factor=contrast_factor,
-        show_guidelines=show_guidelines,
-        guideline_color_rgb_array=guideline_color_rgb,
-        output_image_width=output_image_width,
-        image_url=image_url
-    )
-    return processed_img, image_url, img_array, image_url
-
+        raise gr.Error(f"An unexpected error occurred: {e}", duration=DEFAULT_ERROR_DURATION)
 
 def redraw_image(
     img_array, image_url,
@@ -312,8 +315,7 @@ def redraw_image(
     Processes the already-fetched image with new parameters.
     """
     if img_array is None:
-        gr.Warning("No image loaded. Please fetch an image first.")
-        return None, img_array, image_url
+        raise gr.Error("No image loaded. Please fetch an image first.", duration=DEFAULT_ERROR_DURATION)
 
     guideline_color_rgb = np.array(GUIDELINE_COLORS.get(
         guideline_color_name, GUIDELINE_COLORS[DEFAULT_GUIDELINE_COLOR_NAME]), dtype=np.uint8)
