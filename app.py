@@ -114,8 +114,11 @@ def run_app():
 
             with gr.Row():
                 input_checkbox_show_guidelines = gr.Checkbox(
-                    label="Show Chunk Guidelines", value=DEFAULT_SHOW_GUIDELINES, scale=1)
-                input_radio_guideline_color = gr.Radio(
+                    label="Show Guidelines",
+                    value=DEFAULT_SHOW_GUIDELINES,
+                    scale=2
+                )
+                input_dropdown_guideline_color = gr.Dropdown(
                     label="Guideline Color",
                     choices=list(GUIDELINE_COLORS.keys()),
                     value=DEFAULT_GUIDELINE_COLOR_NAME,
@@ -125,7 +128,9 @@ def run_app():
                     label="Output Image Width (px)",
                     value=OUTPUT_IMAGE_WIDTH_IN_PIXELS,
                     precision=0,
-                    minimum=MIN_VALID_OUTPUT_WIDTH
+                    minimum=MIN_VALID_OUTPUT_WIDTH,
+                    scale=3,
+                    maximum=10000
                 )
 
         output_image_component = gr.Image(type='pil', show_label=False, format='png')
@@ -139,7 +144,7 @@ def run_app():
             input_dropdown_sample_images, input_textbox_img_url, input_button_update_image,
             input_slider_chunk_w, input_checkbox_chunk_lock_ratio, input_slider_chunk_h, input_radio_color_effect,
             input_slider_brightness, input_slider_contrast, input_checkbox_show_guidelines,
-            input_radio_guideline_color, input_field_output_width, input_button_reset_to_defaults
+            input_dropdown_guideline_color, input_field_output_width, input_button_reset_to_defaults
         ]
 
         for input_component in all_input_components:
@@ -151,7 +156,7 @@ def run_app():
                 input_dropdown_sample_images, input_textbox_img_url,
                 input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
                 input_slider_brightness, input_slider_contrast,
-                input_checkbox_show_guidelines, input_radio_guideline_color, input_field_output_width
+                input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width
             ],
             outputs=[output_image_component, input_textbox_img_url, cached_image_array_state, cached_image_url_state]
         )
@@ -162,7 +167,7 @@ def run_app():
                 input_dropdown_sample_images, input_textbox_img_url,
                 input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
                 input_slider_brightness, input_slider_contrast,
-                input_checkbox_show_guidelines, input_radio_guideline_color, input_field_output_width
+                input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width
             ],
             outputs=[output_image_component, input_textbox_img_url, cached_image_array_state, cached_image_url_state]
         )
@@ -173,7 +178,7 @@ def run_app():
                 input_dropdown_sample_images, input_textbox_img_url,
                 input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
                 input_slider_brightness, input_slider_contrast,
-                input_checkbox_show_guidelines, input_radio_guideline_color, input_field_output_width
+                input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width
             ],
             outputs=[output_image_component, input_textbox_img_url, cached_image_array_state, cached_image_url_state]
         )
@@ -189,19 +194,19 @@ def run_app():
                     cached_image_array_state, cached_image_url_state,
                     input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
                     input_slider_brightness, input_slider_contrast,
-                    input_checkbox_show_guidelines, input_radio_guideline_color, input_field_output_width
+                    input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width
                 ],
                 outputs=[output_image_component, cached_image_array_state, cached_image_url_state]
             )
 
-        input_radio_guideline_color.change(
+        input_dropdown_guideline_color.change(
             fn=redraw_if_guidelines,
             inputs=[
                 input_checkbox_show_guidelines,
                 cached_image_array_state, cached_image_url_state,
                 input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
                 input_slider_brightness, input_slider_contrast,
-                input_checkbox_show_guidelines, input_radio_guideline_color, input_field_output_width
+                input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width
             ],
             outputs=[output_image_component, cached_image_array_state, cached_image_url_state]
         )
@@ -213,7 +218,7 @@ def run_app():
                 input_dropdown_sample_images, input_textbox_img_url,
                 input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
                 input_slider_brightness, input_slider_contrast,
-                input_checkbox_show_guidelines, input_radio_guideline_color, input_field_output_width,
+                input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width,
                 output_image_component, cached_image_array_state, cached_image_url_state
             ]
         )
@@ -239,7 +244,7 @@ def run_app():
                 input_dropdown_sample_images, input_textbox_img_url,
                 input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
                 input_slider_brightness, input_slider_contrast,
-                input_checkbox_show_guidelines, input_radio_guideline_color, input_field_output_width,
+                input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width,
                 output_image_component, cached_image_array_state, cached_image_url_state
             ]
         )
@@ -270,7 +275,7 @@ def fetch_and_process_image(
 
         image_url = url_from_input_field
         used_sample = None
-        
+
         if selected_sample_choice_str:
             for item in SAMPLE_IMAGES_DATA:
                 if f"{item['name']} - {item['description']}" == selected_sample_choice_str:

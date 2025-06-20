@@ -26,16 +26,16 @@ DEFAULT_ERROR_DURATION = 30
 
 DEFAULT_SHOW_GUIDELINES = False
 GUIDELINE_COLORS = {
+    "White": [255, 255, 255],
     "Red": [255, 128, 0],
     "Green": [0, 255, 0],
     "Blue": [0, 128, 255],
     "Yellow": [255, 255, 0],
     "Cyan": [0, 255, 255],
     "Magenta": [255, 0, 255],
-    "White": [255, 255, 255],
     "Black": [0, 0, 0],
 }
-DEFAULT_GUIDELINE_COLOR_NAME = "Red"
+DEFAULT_GUIDELINE_COLOR_NAME = "White"
 
 SAMPLE_IMAGES_DATA = DEFAULT_SAMPLE_IMAGES_DATA  # get_updated_sample_images()
 SAMPLE_IMAGE_CHOICES = [f"{item['name']} - {item['description']}" for item in SAMPLE_IMAGES_DATA]
