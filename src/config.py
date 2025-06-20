@@ -15,6 +15,7 @@ OUTPUT_IMAGE_HEIGHT = OUTPUT_IMAGE_WIDTH * 0.375
 # Matlibplot settings
 DEFAULT_TITLE_FONT_SIZE = 12
 
+# Gradio settings
 DEFAULT_CHUNK_W = 16
 DEFAULT_CHUNK_H = 16
 MIN_CHUNK_SIZE_PX = 4
@@ -35,7 +36,7 @@ GUIDELINE_COLORS = {
 DEFAULT_GUIDELINE_COLOR_NAME = "Red"
 
 SAMPLE_IMAGES_DATA = DEFAULT_SAMPLE_IMAGES_DATA  # get_updated_sample_images()
-sample_image_choices = [f"{item['name']} - {item['description']}" for item in SAMPLE_IMAGES_DATA]
+SAMPLE_IMAGE_CHOICES = [f"{item['name']} - {item['description']}" for item in SAMPLE_IMAGES_DATA]
 
 if SAMPLE_IMAGES_DATA:
     first_item = SAMPLE_IMAGES_DATA[0]

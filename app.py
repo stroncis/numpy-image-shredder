@@ -3,8 +3,8 @@ import numpy as np
 from gradio.themes.utils import sizes as theme_sizes  # Because Gradio lookup fails
 
 from src.utils import (
-    process_image, get_timestamp, download_image, print_event_data, lock_slider_ratio,
-    sync_height_to_width, set_default_choice_str
+    process_image, download_image, print_event_data, set_default_choice_str,
+    lock_slider_ratio, sync_height_to_width
 )
 from src.image_updater import get_image_url_from_item
 from src.config import (
@@ -14,7 +14,7 @@ from src.config import (
     DEFAULT_BRIGHTNESS, DEFAULT_CONTRAST, DEFAULT_SHOW_GUIDELINES,
     GUIDELINE_COLORS, DEFAULT_GUIDELINE_COLOR_NAME,
     OUTPUT_IMAGE_WIDTH_IN_PIXELS, MIN_VALID_OUTPUT_WIDTH,
-    sample_image_choices
+    SAMPLE_IMAGE_CHOICES
 )
 
 
@@ -57,7 +57,6 @@ def run_app():
 
         cached_image_array_state = gr.State(None)
         cached_image_url_state = gr.State(None)
-        is_batch_updating_state = gr.State(value=False)
         chunk_delta_state = gr.State(0)
 
         # --------------------------------* UI Input Components *--------------------------------
@@ -65,7 +64,7 @@ def run_app():
         with gr.Column():
             input_dropdown_sample_images = gr.Dropdown(
                 label="Sample Images",
-                choices=sample_image_choices,
+                choices=SAMPLE_IMAGE_CHOICES,
                 value=set_default_choice_str()
             )
 
@@ -146,18 +145,78 @@ def run_app():
         for input_component in all_input_components:
             print_event_data(input_component)
 
-        inputs_for_processing_parameters = [
-            input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
-            input_slider_brightness, input_slider_contrast, input_checkbox_show_guidelines,
-            input_radio_guideline_color, input_field_output_width
-        ]
+        input_dropdown_sample_images.change(
+            fn=fetch_and_process_image,
+            inputs=[
+                input_dropdown_sample_images, input_textbox_img_url,
+                input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
+                input_slider_brightness, input_slider_contrast,
+                input_checkbox_show_guidelines, input_radio_guideline_color, input_field_output_width
+            ],
+            outputs=[output_image_component, input_textbox_img_url, cached_image_array_state, cached_image_url_state]
+        )
 
-        param_change_event_inputs = [
-            input_dropdown_sample_images,
-            cached_image_url_state, cached_image_array_state,
-            *inputs_for_processing_parameters,
-            is_batch_updating_state
-        ]
+        input_button_update_image.click(
+            fn=fetch_and_process_image,
+            inputs=[
+                input_dropdown_sample_images, input_textbox_img_url,
+                input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
+                input_slider_brightness, input_slider_contrast,
+                input_checkbox_show_guidelines, input_radio_guideline_color, input_field_output_width
+            ],
+            outputs=[output_image_component, input_textbox_img_url, cached_image_array_state, cached_image_url_state]
+        )
+
+        input_textbox_img_url.submit(
+            fn=fetch_and_process_image,
+            inputs=[
+                input_dropdown_sample_images, input_textbox_img_url,
+                input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
+                input_slider_brightness, input_slider_contrast,
+                input_checkbox_show_guidelines, input_radio_guideline_color, input_field_output_width
+            ],
+            outputs=[output_image_component, input_textbox_img_url, cached_image_array_state, cached_image_url_state]
+        )
+
+        for input_component in [
+            input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
+            input_slider_brightness, input_slider_contrast,
+            input_checkbox_show_guidelines, input_field_output_width
+        ]:
+            input_component.change(
+                fn=redraw_image,
+                inputs=[
+                    cached_image_array_state, cached_image_url_state,
+                    input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
+                    input_slider_brightness, input_slider_contrast,
+                    input_checkbox_show_guidelines, input_radio_guideline_color, input_field_output_width
+                ],
+                outputs=[output_image_component, cached_image_array_state, cached_image_url_state]
+            )
+
+        input_radio_guideline_color.change(
+            fn=redraw_if_guidelines,
+            inputs=[
+                input_checkbox_show_guidelines,
+                cached_image_array_state, cached_image_url_state,
+                input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
+                input_slider_brightness, input_slider_contrast,
+                input_checkbox_show_guidelines, input_radio_guideline_color, input_field_output_width
+            ],
+            outputs=[output_image_component, cached_image_array_state, cached_image_url_state]
+        )
+
+        input_button_reset_to_defaults.click(
+            fn=reset_inputs_and_redraw,
+            inputs=[],
+            outputs=[
+                input_dropdown_sample_images, input_textbox_img_url,
+                input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
+                input_slider_brightness, input_slider_contrast,
+                input_checkbox_show_guidelines, input_radio_guideline_color, input_field_output_width,
+                output_image_component, cached_image_array_state, cached_image_url_state
+            ]
+        )
 
         slider_sync_triggers = [input_checkbox_chunk_lock_ratio, input_slider_chunk_w]
 
@@ -173,366 +232,134 @@ def run_app():
             outputs=[input_slider_chunk_h]
         )
 
-        input_slider_chunk_h.release(
-            fn=on_param_change_handler,
-            inputs=param_change_event_inputs,
-            outputs=[output_image_component, cached_image_array_state, cached_image_url_state]
-        )
-
-        input_button_update_image.click(
-            fn=_load_or_use_cached_and_process,
-            inputs=[
-                input_dropdown_sample_images,
-                input_textbox_img_url, cached_image_url_state, cached_image_array_state,
-                *inputs_for_processing_parameters,
-                gr.State(True), is_batch_updating_state,  # force_download=True, batch_active
-                gr.State("Update Button")
-            ],
-            outputs=[output_image_component, cached_image_array_state, cached_image_url_state]
-        )
-
-        # Registering non-sliders change events
-        for input_component in [
-            input_radio_color_effect, input_checkbox_show_guidelines,
-            input_radio_guideline_color, input_field_output_width
-        ]:
-            input_component.change(
-                fn=on_param_change_handler,
-                inputs=param_change_event_inputs,
-                outputs=[output_image_component, cached_image_array_state, cached_image_url_state]
-            )
-
-        # Registering slider release events
-        for input_component_slider in [
-            input_slider_chunk_w, input_slider_chunk_h,
-            input_slider_brightness, input_slider_contrast
-        ]:
-            input_component_slider.release(
-                fn=on_param_change_handler,
-                inputs=param_change_event_inputs,
-                outputs=[output_image_component, cached_image_array_state, cached_image_url_state]
-            )
-
-        input_dropdown_sample_images.change(
-            fn=handle_sample_image_selection_and_load,
-            inputs=[
-                input_dropdown_sample_images,
-                # Pass current values of params that are NOT reset by sample selection
-                input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
-                input_checkbox_show_guidelines, input_radio_guideline_color, input_field_output_width,
-                is_batch_updating_state
-            ],
-            outputs=[
-                input_textbox_img_url, input_slider_brightness, input_slider_contrast,
-                input_checkbox_show_guidelines, input_radio_guideline_color,
-                output_image_component,
-                cached_image_array_state, cached_image_url_state
-            ]
-        ).then(
-            fn=lambda: True, outputs=[is_batch_updating_state]
-        ).then(
-            fn=lambda: False, outputs=[is_batch_updating_state], queue=False
-        )
-
-        input_button_reset_to_defaults.click(
-            fn=clear_all_and_reload_default_action,
-            inputs=[is_batch_updating_state],
-            outputs=[
-                input_textbox_img_url, input_slider_chunk_w, input_slider_chunk_h,
-                input_radio_color_effect, input_slider_brightness, input_slider_contrast,
-                input_checkbox_show_guidelines, input_radio_guideline_color, input_field_output_width,
-                input_dropdown_sample_images,
-                output_image_component,
-                cached_image_array_state, cached_image_url_state
-            ]
-        ).then(
-            fn=lambda: True, outputs=[is_batch_updating_state]
-        ).then(
-            fn=lambda: False, outputs=[is_batch_updating_state], queue=False
-        )
-
         image_shredder_app.load(
             fn=initial_load_action,
-            inputs=None,
-            outputs=[output_image_component, cached_image_array_state, cached_image_url_state]
+            inputs=[],
+            outputs=[
+                input_dropdown_sample_images, input_textbox_img_url,
+                input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
+                input_slider_brightness, input_slider_contrast,
+                input_checkbox_show_guidelines, input_radio_guideline_color, input_field_output_width,
+                output_image_component, cached_image_array_state, cached_image_url_state
+            ]
         )
 
     image_shredder_app.launch()
 
 
-def update_url_from_sample(selected_choice_str):
-    for item in SAMPLE_IMAGES_DATA:
-        if f"{item['name']} - {item['description']}" == selected_choice_str:
-            return item["image_url"], DEFAULT_BRIGHTNESS, DEFAULT_CONTRAST, DEFAULT_SHOW_GUIDELINES, DEFAULT_GUIDELINE_COLOR_NAME
-    return DEFAULT_IMAGE_URL, DEFAULT_BRIGHTNESS, DEFAULT_CONTRAST, DEFAULT_SHOW_GUIDELINES, DEFAULT_GUIDELINE_COLOR_NAME
-
-
-def _get_processing_params(cw, ch, effect, bright, contr, guidelines, guide_color_name, out_width):
-    """On input change, gather current processing parameters."""
-    guideline_color_rgb = np.array(GUIDELINE_COLORS.get(
-        guide_color_name, GUIDELINE_COLORS[DEFAULT_GUIDELINE_COLOR_NAME]), dtype=np.uint8)
-    return {
-        "chunk_w": int(cw), "chunk_h": int(ch), "color_effect": effect,
-        "brightness_offset": bright, "contrast_factor": contr,
-        "show_guidelines": guidelines, "guideline_color_rgb_array": guideline_color_rgb,
-        "output_image_width": out_width
-    }
-
-
-def _load_or_use_cached_and_process(
-    selected_sample_choice_str, url_from_input_field,
-    current_cached_url, current_cached_array,
-    cw, ch, effect, bright, contr, guidelines, guide_color_name, out_width,
-    force_download, batch_update_active,
-    source_log_msg="Processing"
-):
-    """
-    Load an image from URL or use cached version, process it, and return the processed image.
-    If batch_update_active is True, skip processing and return skips.
-    """
-    if batch_update_active:
-        print(f"{get_timestamp()} Skipping _load_or_use_cached_and_process due to batch update.")
-        return (gr.skip(),) * 3  # No changes
-
-    image_array_to_process = None
-    new_cached_url = current_cached_url
-    new_cached_array = current_cached_array
-
-    final_url_to_process = url_from_input_field
-    print(f"{get_timestamp()} force_download {force_download}, source_log_msg {source_log_msg}, Processing image from URL: {url_from_input_field}")
-
-    if force_download:
-        item_definition_to_refresh = None
-
-        if source_log_msg == "Update Button":
-            selected_item_from_dropdown = None
-
-            if selected_sample_choice_str:
-                for item_def in SAMPLE_IMAGES_DATA:
-                    if f"{item_def['name']} - {item_def['description']}" == selected_sample_choice_str:
-                        selected_item_from_dropdown = item_def
-                        break
-
-            if selected_item_from_dropdown:
-                is_input_url_canonical_for_dropdown_item = \
-                    (url_from_input_field == selected_item_from_dropdown.get("source_url")) or \
-                    (selected_item_from_dropdown.get("image_url") and url_from_input_field ==
-                     selected_item_from_dropdown.get("image_url"))
-
-                if is_input_url_canonical_for_dropdown_item:
-                    # Intent: Refresh the currently selected dropdown item
-                    item_definition_to_refresh = selected_item_from_dropdown
-                    # print(f"{get_timestamp()} 'Update Button': Refreshing selected sample '{selected_item_from_dropdown['name']}'.")
-                else:
-                    # Intent: Load the (potentially custom) URL from the input field.
-                    # Does this custom URL happen to be a source_url/image_url of *any* (possibly different) sample?
-                    for item_def in SAMPLE_IMAGES_DATA:
-                        if item_def.get("source_url") == url_from_input_field or \
-                           (item_def.get("image_url") and item_def.get("image_url") == url_from_input_field):
-                            item_definition_to_refresh = item_def
-                            # print(f"{get_timestamp()} 'Update Button': URL in input field ('{url_from_input_field}') matches sample definition '{item_def['name']}'.")
-                            break
-                    # if not item_definition_to_refresh:
-                    #     print(f"{get_timestamp()} 'Update Button': URL in input field ('{url_from_input_field}') is custom, no matching sample definition.")
-            else:
-                # No dropdown selection, or "Update Button" but dropdown is blank (should not happen with a default)
-                # Fallback: check if url_from_input_field matches any sample's base/image_url
-                for item_def in SAMPLE_IMAGES_DATA:
-                    if item_def.get("source_url") == url_from_input_field or \
-                       (item_def.get("image_url") and item_def.get("image_url") == url_from_input_field):
-                        item_definition_to_refresh = item_def
-                        # print(f"{get_timestamp()} 'Update Button' (no dropdown context or mismatch): Input field URL matches sample '{item_def['name']}'.")
-                        break
-
-        elif source_log_msg in ["Initial Load", "Reset Button", "Sample Image Change"]:
-            if selected_sample_choice_str:
-                for item_def in SAMPLE_IMAGES_DATA:
-                    if f"{item_def['name']} - {item_def['description']}" == selected_sample_choice_str:
-                        if url_from_input_field == item_def.get("source_url") or \
-                           url_from_input_field == item_def.get("image_url"):
-                            item_definition_to_refresh = item_def
-                            # print(f"{get_timestamp()} '{source_log_msg}': Identified item '{item_def['name']}' from dropdown and matching input URL.")
-                        else:
-                            # print(f"{get_timestamp()} WARNING '{source_log_msg}': Mismatch between dropdown ('{selected_sample_choice_str}') and input URL ('{url_from_input_field}'). Attempting to find item by input URL.")
-                            for fallback_item_def in SAMPLE_IMAGES_DATA:
-                                if fallback_item_def.get("source_url") == url_from_input_field or \
-                                   (fallback_item_def.get("image_url") and fallback_item_def.get("image_url") == url_from_input_field):
-                                    item_definition_to_refresh = fallback_item_def
-                                    # print(f"{get_timestamp()} '{source_log_msg}': Fallback found item '{fallback_item_def['name']}' by input URL.")
-                                    break
-                        break
-
-        if item_definition_to_refresh:
-            needs_fresh_url = bool(item_definition_to_refresh.get('scraping')) or \
-                item_definition_to_refresh.get('force_url_update', False)
-
-            if needs_fresh_url:
-                # print(f"{get_timestamp()} Getting fresh URL for '{item_definition_to_refresh['name']}'. Has scraping: {bool(item_definition_to_refresh.get('scraping'))}, Has force_update: {item_definition_to_refresh.get('force_url_update', False)}")
-                fresh_url = get_image_url_from_item(item_definition_to_refresh)  # Uses item's source_url for scraping
-                if fresh_url:
-                    final_url_to_process = fresh_url
-                    # print(f"{get_timestamp()} Using fresh URL: {final_url_to_process}")
-        #     else:
-        #         print(f"{get_timestamp()} Item '{item_definition_to_refresh['name']}' does not require fresh URL fetching for this operation.")
-        # else:
-        #     print(f"{get_timestamp()} No specific sample item definition applies. Using URL from input field directly: {final_url_to_process}")
-
-    if force_download or final_url_to_process != current_cached_url or current_cached_array is None:
-        print(f"{get_timestamp()} Downloading image from URL: {final_url_to_process}")  # Use final_url_to_process
-        try:
-            image_array_to_process = download_image(final_url_to_process)  # Use final_url_to_process
-            new_cached_array = image_array_to_process
-            new_cached_url = final_url_to_process  # Cache the final URL that was actually used
-        except Exception as e:
-            gr.Error(f"Error downloading image: {str(e)}")
-            if final_url_to_process == current_cached_url and current_cached_array is not None:
-                print(f"{get_timestamp()} Download failed, using previously cached image for {final_url_to_process}")
-                image_array_to_process = current_cached_array
-            else:
-                return None, current_cached_array, current_cached_url
+def redraw_if_guidelines(show_guidelines, *args):
+    if show_guidelines:
+        return redraw_image(*args)
     else:
-        print(f"{get_timestamp()} Using cached image for URL: {final_url_to_process}")
-        image_array_to_process = current_cached_array
-
-    if image_array_to_process is None:
-        gr.Warning("No image available to process.")
-        return None, new_cached_array, new_cached_url  # Removing image, updating cache
-
-    params = _get_processing_params(cw, ch, effect, bright, contr, guidelines, guide_color_name, out_width)
-    processed_img = process_image(base_img_array=image_array_to_process, **params,
-                                  image_url=final_url_to_process, source=source_log_msg)
-    return processed_img, new_cached_array, new_cached_url
+        return gr.skip(), gr.skip(), gr.skip()
 
 
-def on_param_change_handler(
+def fetch_and_process_image(
     selected_sample_choice_str,
-    current_cached_url, current_cached_array,
-    cw, ch, effect, bright, contr, guidelines, guide_color_name, out_width,
-    batch_update_active,
-    is_locked=None,
-    event_source=None
+    url_from_input_field,
+    chunk_w, chunk_h, color_effect,
+    brightness_offset, contrast_factor,
+    show_guidelines, guideline_color_name, output_image_width
 ):
     """
-    Handle changes to any UI parameters (sliders, radios, etc.) and process the image.
-    If batch_update_active is True, skip processing and return skips.
+        Fetches (scrapes if needed) and processes the image.
+        Returns: processed_img, new_image_url, new_cached_array, new_cached_url
     """
-    if is_locked and event_source == "width":
-        return (gr.skip(),) * 3
+    image_url = url_from_input_field
+    used_sample = None
 
-    if current_cached_array is None:
-        gr.Warning("Please load an image first using the URL field and 'Update Image' button.")
-        return (gr.skip(),) * 3
+    if selected_sample_choice_str:
+        for item in SAMPLE_IMAGES_DATA:
+            if f"{item['name']} - {item['description']}" == selected_sample_choice_str:
+                used_sample = item
+                break
 
-    return _load_or_use_cached_and_process(
-        selected_sample_choice_str,
-        current_cached_url,  # url_from_input_field is the current_cached_url for param changes
-        current_cached_url, current_cached_array,
-        cw, ch, effect, bright, contr, guidelines, guide_color_name, out_width,
-        False, batch_update_active,
-        "Param Change"
+    if used_sample:
+        if used_sample.get("scraping"):
+            image_url = get_image_url_from_item(used_sample)
+        else:
+            image_url = used_sample.get("image_url") or used_sample.get("source_url")
+
+    try:
+        img_array = download_image(image_url)
+    except Exception as e:
+        gr.Error(f"Error downloading image: {str(e)}")
+        return None, image_url, None, image_url
+
+    guideline_color_rgb = np.array(GUIDELINE_COLORS.get(
+        guideline_color_name, GUIDELINE_COLORS[DEFAULT_GUIDELINE_COLOR_NAME]), dtype=np.uint8)
+    processed_img = process_image(
+        base_img_array=img_array,
+        chunk_w=int(chunk_w), chunk_h=int(chunk_h),
+        color_effect=color_effect,
+        brightness_offset=brightness_offset,
+        contrast_factor=contrast_factor,
+        show_guidelines=show_guidelines,
+        guideline_color_rgb_array=guideline_color_rgb,
+        output_image_width=output_image_width,
+        image_url=image_url
     )
+    return processed_img, image_url, img_array, image_url
 
 
-def handle_sample_image_selection_and_load(
-    selected_choice_str,
-    cw, ch, effect, _guidelines, _guide_color_name, out_width,
-    batch_update_active_flag
+def redraw_image(
+    img_array, image_url,
+    chunk_w, chunk_h, color_effect,
+    brightness_offset, contrast_factor,
+    show_guidelines, guideline_color_name, output_image_width
 ):
     """
-    Handle selection of a sample image from the dropdown and load it.
-    If batch_update_active_flag is True, skip processing and return skips.
+    Processes the already-fetched image with new parameters.
     """
-    if batch_update_active_flag:
-        print(f"{get_timestamp()} Skipping sample selection due to batch update.")
-        return (gr.skip(),) * 8
+    if img_array is None:
+        gr.Warning("No image loaded. Please fetch an image first.")
+        return None, img_array, image_url
 
-    selected_item = None
-    for item in SAMPLE_IMAGES_DATA:
-        if f"{item['name']} - {item['description']}" == selected_choice_str:
-            selected_item = item
-            break
-
-    if not selected_item:
-        gr.Warning(f"Could not find sample image: {selected_choice_str}")
-        return (gr.skip(),) * 8
-
-    image_url = get_image_url_from_item(selected_item)
-    if not image_url:
-        gr.Error(f"Could not get image URL for '{selected_item['name']}'")
-        return (gr.skip(),) * 8
-
-    new_url = image_url
-    new_brightness = DEFAULT_BRIGHTNESS
-    new_contrast = DEFAULT_CONTRAST
-    new_show_guidelines = DEFAULT_SHOW_GUIDELINES
-    new_guideline_color = DEFAULT_GUIDELINE_COLOR_NAME
-
-    processed_img, final_cached_array, final_cached_url = _load_or_use_cached_and_process(
-        selected_choice_str,
-        new_url,
-        gr.State(None), gr.State(None),  # Clearing cache states to force download
-        cw, ch, effect, new_brightness, new_contrast,
-        new_show_guidelines, new_guideline_color, out_width,
-        True, False,  # force_download=True, batch_active=False
-        "Sample Image Change"
+    guideline_color_rgb = np.array(GUIDELINE_COLORS.get(
+        guideline_color_name, GUIDELINE_COLORS[DEFAULT_GUIDELINE_COLOR_NAME]), dtype=np.uint8)
+    processed_img = process_image(
+        base_img_array=img_array,
+        chunk_w=int(chunk_w), chunk_h=int(chunk_h),
+        color_effect=color_effect,
+        brightness_offset=brightness_offset,
+        contrast_factor=contrast_factor,
+        show_guidelines=show_guidelines,
+        guideline_color_rgb_array=guideline_color_rgb,
+        output_image_width=output_image_width,
+        image_url=image_url
     )
-    return (
-        new_url, new_brightness, new_contrast, new_show_guidelines, new_guideline_color,
-        processed_img, final_cached_array, final_cached_url
-    )
-
-
-def clear_all_and_reload_default_action(batch_update_active_flag):
-    """
-    Reset all parameters to their defaults and reload the default image.
-    If batch_update_active_flag is True, skip processing and return skips.
-    """
-    if batch_update_active_flag:
-        print(f"{get_timestamp()} Skipping reset due to batch update.")
-        return (gr.skip(),) * 13
-
-    print(f"{get_timestamp()} Resetting to defaults and reloading image.")
-
-    default_choice_str = set_default_choice_str()
-    processed_img, final_cached_array, final_cached_url = _load_or_use_cached_and_process(
-        default_choice_str,
-        DEFAULT_IMAGE_URL, gr.State(None), gr.State(None),
-        DEFAULT_CHUNK_W, DEFAULT_CHUNK_H, DEFAULT_COLOR_EFFECT,
-        DEFAULT_BRIGHTNESS, DEFAULT_CONTRAST, DEFAULT_SHOW_GUIDELINES,
-        DEFAULT_GUIDELINE_COLOR_NAME, OUTPUT_IMAGE_WIDTH_IN_PIXELS,
-        True, False,  # force_download=True, batch_active=False
-        "Reset Button"
-    )
-
-    return (
-        final_cached_url, DEFAULT_CHUNK_W, DEFAULT_CHUNK_H,
-        DEFAULT_COLOR_EFFECT, DEFAULT_BRIGHTNESS, DEFAULT_CONTRAST,
-        DEFAULT_SHOW_GUIDELINES, DEFAULT_GUIDELINE_COLOR_NAME, OUTPUT_IMAGE_WIDTH_IN_PIXELS,
-        default_choice_str,
-        processed_img,
-        final_cached_array, final_cached_url
-    )
+    return processed_img, img_array, image_url
 
 
 def initial_load_action():
-    """
-    Load the initial image when the app starts.
-    This is called when the app is first loaded.
-    """
-    print(f"{get_timestamp()} Initial image load.")
+    return reset_inputs_and_redraw()
 
+
+def reset_inputs_and_redraw():
     default_choice_str = set_default_choice_str()
-    processed_img, initial_cached_array, initial_cached_url = _load_or_use_cached_and_process(
-        default_choice_str,
-        DEFAULT_IMAGE_URL,
-        None, None,  # current_cached_url, current_cached_array
-        DEFAULT_CHUNK_W, DEFAULT_CHUNK_H, DEFAULT_COLOR_EFFECT,
-        DEFAULT_BRIGHTNESS, DEFAULT_CONTRAST, DEFAULT_SHOW_GUIDELINES,
-        DEFAULT_GUIDELINE_COLOR_NAME, OUTPUT_IMAGE_WIDTH_IN_PIXELS,
-        True, False,  # force_download=True, batch_active=False
-        "Initial Load"
+    default_url = DEFAULT_IMAGE_URL
+    default_chunk_w = DEFAULT_CHUNK_W
+    default_chunk_h = DEFAULT_CHUNK_H
+    default_color_effect = DEFAULT_COLOR_EFFECT
+    default_brightness = DEFAULT_BRIGHTNESS
+    default_contrast = DEFAULT_CONTRAST
+    default_show_guidelines = DEFAULT_SHOW_GUIDELINES
+    default_guideline_color = DEFAULT_GUIDELINE_COLOR_NAME
+    default_output_width = OUTPUT_IMAGE_WIDTH_IN_PIXELS
+
+    processed_img, image_url, img_array, cached_url = fetch_and_process_image(
+        default_choice_str, default_url,
+        default_chunk_w, default_chunk_h, default_color_effect,
+        default_brightness, default_contrast,
+        default_show_guidelines, default_guideline_color, default_output_width
     )
-    return processed_img, initial_cached_array, initial_cached_url
+
+    return (
+        default_choice_str, image_url, default_chunk_w, default_chunk_h,
+        default_color_effect, default_brightness, default_contrast,
+        default_show_guidelines, default_guideline_color, default_output_width,
+        processed_img, img_array, cached_url
+    )
 
 
 if __name__ == '__main__':
