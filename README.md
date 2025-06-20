@@ -79,7 +79,7 @@ img_array = np.array([
 
     Scraping selectors `image_selector_regex` are included in sample image metadata and can be utilized for any source, which returns SSR HTML with an image element or APIs returning JSON. For images, where scraped URL needs parsing, instructions `url_transform_regex` and `url_transform_replacement` also could be added to metadata.
 
-    Dog images are fully open oourced from [Stanford Dogs Dataset](http://vision.stanford.edu/aditya86/ImageNetDogs/), hosted by [https://dog.ceo/dog-api/](https://dog.ceo/dog-api/). Sources: [code](https://github.com/ElliottLandsborough/dog-ceo-api) ,[images](https://github.com/jigsawpieces/dog-api-images).
+    Dog images are fully open sourced from [Stanford Dogs Dataset](http://vision.stanford.edu/aditya86/ImageNetDogs/), hosted by [https://dog.ceo/dog-api/](https://dog.ceo/dog-api/). Sources: [code](https://github.com/ElliottLandsborough/dog-ceo-api) ,[images](https://github.com/jigsawpieces/dog-api-images).
 
 2.  **Image Preparation**:
     *   The downloaded image is converted to a PIL Image object and then to a NumPy array.
@@ -92,25 +92,25 @@ img_array = np.array([
 4.  **Color Effects Application (`utils.py -> apply_color_effect`)**: If a color effect other than "None" is selected, it's applied to the padded image array using NumPy. The image array is first converted to `np.float32` for calculations to prevent data loss or overflow, and then clipped back to the 0-255 range and converted to `np.uint8`. Though using [Pillow](https://pillow.readthedocs.io/en/stable/) to transform images (f.e grayscale, posterize, solarize etc.) would be more efficient, but this project's target is [NumPy](https://numpy.org/doc/stable/). Effects and transformations descriptions:
     *   **Invert Colors**: `255 - img_array`. NumPy performs element-wise subtraction of each pixel value from scalar 255, broadcasting to match `img` array shape. Another way is to use `~img` or `numpy.invert(img)` bitwise NOT, which would work on `uint8`, though it is less intuitively readable. Applying this to `img_copy` (which is `float32`) would be maybe slightly less performant but still correct, though `numpy.invert(img_copy)` - not.
 
-    *   **Swap R/G Channels**: `swapped_img[..., 0], swapped_img[..., 1] = swapped_img[..., 1].copy(), swapped_img[..., 0].copy()`. NumPy's array slicing is used to select the Red and Green channels (0 and 1 respectively, on the last axis) and swap their contents.
+    *   **Swap R/G Channels**: `swapped_img[..., 0], swapped_img[..., 1] = swapped_img[..., 1].copy(), swapped_img[..., 0].copy()`. NumPy's array slicing is used to select the <span style="color:red">Red</span> and <span style="color:green">Green</span> channels (0 and 1 respectively, on the last axis) and swap their contents.
 
-    *   **Red Channel Only**: `red_only_img[..., 1:] = 0`. NumPy slicing selects the Green and Blue channels (channels 1 and 2) and sets all their pixel values to 0.
+    *   **Red Channel Only**: `red_only_img[..., 1:] = 0`. NumPy slicing selects the <span style="color:green">Green</span> and <span style="color:blue">Blue</span> channels (channels 1 and 2) and sets all their pixel values to 0.
 
     *   **Grayscale**: `gray_img = np.mean(img_copy, axis=2, keepdims=True)`. NumPy calculates the mean pixel value across the color channels (axis 2) for each pixel. `keepdims=True` maintains the third dimension, and the result is then broadcasted across three channels using `np.repeat(gray_img, 3, axis=2)`.
 
-        **Why three identical channels** - when Matplotlib receives a single channel image array, it applies color mapping (`viridis` by default, blue-green-yellow gradient), so to make a grayscale image and display ir correctly, we have to keep all channels.
+        > **Why three identical channels** - when Matplotlib receives a single channel image array, it applies color mapping (`viridis` by default, <span style="color:blue">blue</span>-<span style="color:green">green</span>-<span style="color:goldenrod">yellow</span> gradient), so to make a grayscale image and display ir correctly, we have to keep all channels.
 
-    *   **Grayscale 1 Channel**: Leaving 1 channel to demonstrate how Matplotlib applies `[viridis](https://matplotlib.org/stable/users/explain/colors/colormaps.html)` [colormap](https://matplotlib.org/stable/users/explain/colors/colormaps.html).
+    *   **Grayscale 1 Channel**: 1 channel version to demonstrate how Matplotlib applies `viridis` (default) [colormap](https://matplotlib.org/stable/users/explain/colors/colormaps.html).
 
     *   **Sepia**: Effect immitates aged photo prints, which naturally appears due to chemical changes, like silver sulfides, paper aging and others. A standard sepia transformation matrix (3x3, sepia kernel) is applied. For each pixel, the new R, G, B values are linear combinations of the original R, G, B values (e.g., `R_new = R_orig*0.393 + G_orig*0.769 + B_orig*0.189`). This is achieved through element-wise multiplication and addition on NumPy arrays representing the individual channels.
 
-        Standard sepia transformation matrix coefficients:
-        ```
-        Applied to Red = (R * 0.393) + (G * 0.769) + (B * 0.189)
-        Applied to  Green = (R * 0.349) + (G * 0.686) + (B * 0.168)
-        Applied to  Blue = (R * 0.272) + (G * 0.534) + (B * 0.131)
-        ```
-        Changing coefficients, different sepia variations can be achieved, [more on topic](https://leware.net/photo/blogSepia.html).
+        > Standard sepia transformation matrix coefficients:
+        > ```
+        > Applied to Red = (R * 0.393) + (G * 0.769) + (B * 0.189)
+        > Applied to Green = (R * 0.349) + (G * 0.686) + (B * 0.168)
+        > Applied to Blue = (R * 0.272) + (G * 0.534) + (B * 0.131)
+        > ```
+        > Changing coefficients, different sepia variations can be achieved, [more on topic](https://leware.net/photo/blogSepia.html).
 
     *   **Brightness Up/Down**: `np.clip(img_copy + 30, 0, 255)` or `np.clip(img_copy - 30, 0, 255)`. A constant value is added to or subtracted from every pixel value in the NumPy array. `np.clip` ensures values remain in the valid [0, 255] range.
 
@@ -119,7 +119,7 @@ img_array = np.array([
     *   **Solarize**: In photography, [solarization](https://en.wikipedia.org/wiki/Solarization_(photography)) is the effect of tone reversal observed in cases of extreme overexposure of the photographic film in the camera. Not a big fan of this, but it is ubiquitous. A higher threshold value sets a brighter threshold, and colors need to be brighter to be overexposed. `solarized_img[solarized_img >= threshold] = 255 - solarized_img[solarized_img >= threshold]`. NumPy's boolean array indexing is used to select pixels above a `threshold` and inverts their values.
 
 5.  **Display**:
-    *   `matplotlib` is used to create a figure with three subplots showing the original (padded) image, the image after vertical shredding, and the final shredded image.
+    *   `Matplotlib` is used to create a figure with three subplots showing the original (padded) image, the image after vertical shredding, and the final shredded image.
     *   This figure is saved to an in-memory buffer and converted to a PIL Image, which is then displayed in the Gradio UI.
     *   Output view for seamless tile image:<br>
         ![Output view](assets/images/result_example.png)
@@ -131,8 +131,9 @@ img_array = np.array([
         ![Output with guidelines](assets/images/result_guidelines_example.png)
     *   Output using [thispersondoesnotexist.com](https://thispersondoesnotexist.com/)'s `StyleGAN2` face generator. This can en up as a comical lo-fi character or plain horror, use with discretion. No person's feelings has been harmed. Smack **Reload image** button to cease current person's non existence.
         ![Output with guidelines](assets/images/result_thispersondoesnotexist.png)
-    *   Slicing [checkerboard](https://dinopixel.com/checker-board-pixel-art-9080) and [circle](https://www.freepik.com/free-vector/japanese-vintage-seamless-pattern-vector-illustration-horizontally-vertically-repeatable_79635077.htm) patterns:
+    *   Slicing [checkerboard](https://dinopixel.com/checker-board-pixel-art-9080) for a calibration target [fiducial marker](https://en.wikipedia.org/wiki/Fiducial_marker) quadrants (a wordy way to describe!):
         ![Output with guidelines](assets/images/result_checkerboard.png)
+    *   Slicing [circle](https://www.freepik.com/free-vector/japanese-vintage-seamless-pattern-vector-illustration-horizontally-vertically-repeatable_79635077.htm) pattern for [moire pattern](https://en.wikipedia.org/wiki/Moir%C3%A9_pattern):
         ![Output with guidelines](assets/images/result_pattern1.png)
     *   Output view with filtered-out objects:
         ![Output with guidelines](assets/images/result_disappear.png)
@@ -163,5 +164,4 @@ img_array = np.array([
     python app.py
     ```
 5.  Open your web browser and navigate to the URL provided by Gradio (usually `http://127.0.0.1:7860`).
-
-Enter an image URL, adjust the chunk sliders, and select a color effect to see the transformations.
+6. Enter an image URL, adjust the chunk sliders, and select a color effect to see the transformations.
