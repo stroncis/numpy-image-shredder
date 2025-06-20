@@ -44,12 +44,14 @@ def download_image(url):
 
     if response.status_code != 200:
         print(f"Failed to download image. Received status code {response.status_code} for URL: {url}")
-        raise gr.Error(f"Failed to download image. Status code: {response.status_code} from URL: {url}", duration=DEFAULT_ERROR_DURATION)
+        raise gr.Error(
+            f"Failed to download image. Status code: {response.status_code} from URL: {url}", duration=DEFAULT_ERROR_DURATION)
 
     content_type = response.headers.get('Content-Type', '').lower()
     if not content_type.startswith('image/'):
         print(f"Warning: Content-Type is '{content_type}', which might not be an image. URL: {url}")
-        raise gr.Error(f"URL does not point to an image. Content-Type: '{content_type}'. URL: {url}", duration=DEFAULT_ERROR_DURATION)
+        raise gr.Error(
+            f"URL does not point to an image. Content-Type: '{content_type}'. URL: {url}", duration=DEFAULT_ERROR_DURATION)
 
     try:
         img = Image.open(BytesIO(response.content)).convert('RGB')
@@ -235,25 +237,61 @@ def apply_color_effect(img, effect, brightness_offset, contrast_factor):
     return np.clip(img_temp_float, 0, 255).astype(np.uint8)
 
 
+def ensure_three_channels(img):
+    if img.ndim == 2:
+        # (H, W) -> (H, W, 3)
+        return np.repeat(img[:, :, np.newaxis], 3, axis=2)
+    elif img.ndim == 3 and img.shape[2] == 1:
+        # (H, W, 1) -> (H, W, 3)
+        return np.repeat(img, 3, axis=2)
+    return img
+
+
 def draw_guidelines(image_array, chunk_size, orientation='vertical', line_thickness=1, line_color_rgb=np.array([255, 0, 0], dtype=np.uint8)):
     """Draws guidelines on an image array."""
     img_with_lines = image_array.copy()
-    h, w, _ = img_with_lines.shape
-
-    if orientation == 'vertical':
-        for i in range(1, w // chunk_size):
-            x = i * chunk_size
-            start_x = max(0, x - line_thickness // 2)
-            end_x = min(w, x + (line_thickness + 1) // 2)
-            if start_x < end_x:
-                img_with_lines[:, start_x:end_x, :] = line_color_rgb
-    elif orientation == 'horizontal':
-        for i in range(1, h // chunk_size):
-            y = i * chunk_size
-            start_y = max(0, y - line_thickness // 2)
-            end_y = min(h, y + (line_thickness + 1) // 2)
-            if start_y < end_y:
-                img_with_lines[start_y:end_y, :, :] = line_color_rgb
+    # Check if the image is 1 channel or RGB
+    if img_with_lines.ndim == 2 or (img_with_lines.ndim == 3 and img_with_lines.shape[2] == 1):
+        # Grayscale image
+        h, w = img_with_lines.shape[:2]
+        line_value = 255 if np.mean(line_color_rgb) > 128 else 0
+        if orientation == 'vertical':
+            for i in range(1, w // chunk_size):
+                x = i * chunk_size
+                start_x = max(0, x - line_thickness // 2)
+                end_x = min(w, x + (line_thickness + 1) // 2)
+                if start_x < end_x:
+                    if img_with_lines.ndim == 2:
+                        img_with_lines[:, start_x:end_x] = line_value
+                    else:
+                        img_with_lines[:, start_x:end_x, 0] = line_value
+        elif orientation == 'horizontal':
+            for i in range(1, h // chunk_size):
+                y = i * chunk_size
+                start_y = max(0, y - line_thickness // 2)
+                end_y = min(h, y + (line_thickness + 1) // 2)
+                if start_y < end_y:
+                    if img_with_lines.ndim == 2:
+                        img_with_lines[start_y:end_y, :] = line_value
+                    else:
+                        img_with_lines[start_y:end_y, :, 0] = line_value
+    else:
+        # RGB image processing
+        h, w, _ = img_with_lines.shape
+        if orientation == 'vertical':
+            for i in range(1, w // chunk_size):
+                x = i * chunk_size
+                start_x = max(0, x - line_thickness // 2)
+                end_x = min(w, x + (line_thickness + 1) // 2)
+                if start_x < end_x:
+                    img_with_lines[:, start_x:end_x, :] = line_color_rgb
+        elif orientation == 'horizontal':
+            for i in range(1, h // chunk_size):
+                y = i * chunk_size
+                start_y = max(0, y - line_thickness // 2)
+                end_y = min(h, y + (line_thickness + 1) // 2)
+                if start_y < end_y:
+                    img_with_lines[start_y:end_y, :, :] = line_color_rgb
     return img_with_lines
 
 
