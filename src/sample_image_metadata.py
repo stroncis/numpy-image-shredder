@@ -7,6 +7,7 @@ DEFAULT_SAMPLE_IMAGES_DATA = [
         "description": "Good boy/girl alert!",
         "source_url": "https://dog.ceo/api/breeds/image/random",
         "license": "Public domain (Dog CEO)",
+        "multiple": True,
         "force_url_update": True,
         "scraping": {
             "image_selector_regex": "\"message\":\"([^\"]+)\"",  # This API returns JSON with an image URL
@@ -26,14 +27,16 @@ DEFAULT_SAMPLE_IMAGES_DATA = [
         "description": "There's no escape, they swarm!",
         "source_url": "https://thispersondoesnotexist.com/",
         "image_url": "https://thispersondoesnotexist.com/",
-        "license": "Unknown"
+        "license": "Unknown",
+        "multiple": True
     },
     {
         "name": "🔄\u2003Lorem Picsum",
         "description": "Random photo from Picsum",
         "source_url": "https://picsum.photos/",
         "image_url": "https://picsum.photos/1024",
-        "license": "Public domain (Picsum)"
+        "license": "Public domain (Picsum)",
+        "multiple": True
     },
     {
         "name": "1️⃣\u2003Botanical Leaf Tapestry",
@@ -76,6 +79,7 @@ DEFAULT_SAMPLE_IMAGES_DATA = [
         "description": "random photos",
         "source_url": "https://random-image-pepebigotes.vercel.app/",
         "image_url": "https://random-image-pepebigotes.vercel.app/api/random-image",
-        "license": "Public domain (Pepe Bigotes)"
+        "license": "Public domain (Pepe Bigotes)",
+        "multiple": True
     }
 ]

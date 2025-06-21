@@ -46,6 +46,10 @@ if SAMPLE_IMAGES_DATA:
 else:
     DEFAULT_IMAGE_URL = "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Yellow_flowers_a.jpg/960px-Yellow_flowers_a.jpg"
 
+BUTTON_SINGLE_IMAGE_TEXT = "Reload image"
+BUTTON_MULTIPLE_IMAGES_TEXT = "Change image"
+BUTTON_CUSTOM_URL_TEXT = "Load image"
+
 # Effects for Radio buttons
 COLOR_EFFECTS = [
     "None", "Invert Colors", "Swap R/G Channels", "Red Channel Only",

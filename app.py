@@ -14,7 +14,8 @@ from src.config import (
     DEFAULT_BRIGHTNESS, DEFAULT_CONTRAST, DEFAULT_SHOW_GUIDELINES,
     GUIDELINE_COLORS, DEFAULT_GUIDELINE_COLOR_NAME,
     OUTPUT_IMAGE_WIDTH_IN_PIXELS, MIN_VALID_OUTPUT_WIDTH,
-    DEFAULT_ERROR_DURATION, SAMPLE_IMAGE_CHOICES
+    DEFAULT_ERROR_DURATION, SAMPLE_IMAGE_CHOICES,
+    BUTTON_SINGLE_IMAGE_TEXT, BUTTON_MULTIPLE_IMAGES_TEXT, BUTTON_CUSTOM_URL_TEXT
 )
 
 
@@ -154,15 +155,32 @@ def run_app():
         input_dropdown_sample_images.change(
             fn=fetch_and_process_image,
             inputs=[
-                is_custom_url_state, input_dropdown_sample_images, input_textbox_img_url,
-                input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
-                input_slider_brightness, input_slider_contrast,
+                is_custom_url_state, input_dropdown_sample_images,
+                input_textbox_img_url, input_slider_chunk_w, input_slider_chunk_h,
+                input_radio_color_effect, input_slider_brightness, input_slider_contrast,
                 input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width
             ],
             outputs=[
                 output_image_component, input_textbox_img_url, cached_image_array_state,
-                cached_image_url_state, is_custom_url_state, input_button_update_image
-                ]
+                cached_image_url_state, is_custom_url_state
+            ]
+        )
+
+        def on_sample_change(selected_sample):
+            current_sample = None
+            for item in SAMPLE_IMAGES_DATA:
+                if f"{item['name']} - {item['description']}" == selected_sample:
+                    current_sample = item
+                    break
+            if current_sample and current_sample.get('multiple'):
+                return BUTTON_MULTIPLE_IMAGES_TEXT
+            else:
+                print(f"❌ Sample '{selected_sample}' does not allow refreshing.")
+                return BUTTON_SINGLE_IMAGE_TEXT
+        input_dropdown_sample_images.change(
+            fn=on_sample_change,
+            inputs=[input_dropdown_sample_images],
+            outputs=[input_button_update_image]
         )
 
         input_button_update_image.click(
@@ -171,21 +189,22 @@ def run_app():
                 is_custom_url_state, input_dropdown_sample_images, input_textbox_img_url,
                 input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
                 input_slider_brightness, input_slider_contrast,
-                input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width
+                input_checkbox_show_guidelines, input_dropdown_guideline_color,
+                input_field_output_width
             ],
             outputs=[
                 output_image_component, input_textbox_img_url, cached_image_array_state,
-                cached_image_url_state, is_custom_url_state, input_button_update_image
-                ]
+                cached_image_url_state, is_custom_url_state
+            ]
         )
 
         # def on_url_input(url):
         #     print(f"💬 Image URL input: {url}")
-        #     return [True, "Load image"]  # Tuples also accepted
+        #     return [True, BUTTON_CUSTOM_URL_TEXT]  # Tuples also accepted
         input_textbox_img_url.input(
             # fn=on_url_input,
             # inputs=[input_textbox_img_url],
-            fn=lambda: (True, "Load image"),
+            fn=lambda: (True, BUTTON_CUSTOM_URL_TEXT),
             inputs=[],
             outputs=[is_custom_url_state, input_button_update_image]
         )
@@ -195,13 +214,13 @@ def run_app():
             inputs=[
                 is_custom_url_state, input_dropdown_sample_images, input_textbox_img_url,
                 input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
-                input_slider_brightness, input_slider_contrast,
-                input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width
+                input_slider_brightness, input_slider_contrast, input_checkbox_show_guidelines,
+                input_dropdown_guideline_color, input_field_output_width
             ],
             outputs=[
                 output_image_component, input_textbox_img_url, cached_image_array_state,
-                cached_image_url_state, is_custom_url_state, input_button_update_image
-                ]
+                cached_image_url_state, is_custom_url_state
+            ]
         )
 
         for input_component in [
@@ -330,7 +349,7 @@ def fetch_and_process_image(
             output_image_width=output_image_width,
             image_url=image_url
         )
-        return processed_img, image_url, img_array, image_url, False, "Reload image"
+        return processed_img, image_url, img_array, image_url, False
     except gr.Error:
         raise
     except Exception as e:
@@ -375,8 +394,24 @@ def initial_load_action():
     return reset_inputs_and_redraw()
 
 
+def get_image_load_button_text(sample_choice_str):
+    if sample_choice_str:
+        current_sample = None
+        for item in SAMPLE_IMAGES_DATA:
+            if f"{item['name']} - {item['description']}" == sample_choice_str:
+                current_sample = item
+                break
+
+        if current_sample and current_sample.get('multiple'):
+            return BUTTON_MULTIPLE_IMAGES_TEXT
+        else:
+            return BUTTON_SINGLE_IMAGE_TEXT
+    else:
+        return BUTTON_CUSTOM_URL_TEXT
+
 def reset_inputs_and_redraw():
     default_choice_str = set_default_choice_str()
+    submit_button_text = get_image_load_button_text(default_choice_str)
     default_url = DEFAULT_IMAGE_URL
     default_chunk_w = DEFAULT_CHUNK_W
     default_chunk_h = DEFAULT_CHUNK_H
@@ -387,7 +422,7 @@ def reset_inputs_and_redraw():
     default_guideline_color = DEFAULT_GUIDELINE_COLOR_NAME
     default_output_width = OUTPUT_IMAGE_WIDTH_IN_PIXELS
 
-    processed_img, image_url, img_array, cached_url, is_custom_url, reload_button_text = fetch_and_process_image(
+    processed_img, image_url, img_array, cached_url, is_custom_url = fetch_and_process_image(
         False,
         default_choice_str, default_url,
         default_chunk_w, default_chunk_h, default_color_effect,
@@ -399,9 +434,9 @@ def reset_inputs_and_redraw():
         default_choice_str, image_url, default_chunk_w, default_chunk_h,
         default_color_effect, default_brightness, default_contrast,
         default_show_guidelines, default_guideline_color, default_output_width,
-        processed_img, img_array, cached_url,
-        is_custom_url, reload_button_text
+        processed_img, img_array, cached_url, is_custom_url, submit_button_text
     )
+
 
 if __name__ == '__main__':
     run_app()
