@@ -79,8 +79,6 @@ def download_image(url):
 
 def pad_image_to_fit_chunks(img, chunk_width, chunk_height):
     img_h, img_w, _ = img.shape
-    chunk_width = int(chunk_width)
-    chunk_height = int(chunk_height)
     pad_h = (chunk_height - (img_h % chunk_height)) % chunk_height
     pad_w = (chunk_width - (img_w % chunk_width)) % chunk_width
     padded_img = np.pad(img, ((0, pad_h), (0, pad_w), (0, 0)), mode='edge')
@@ -164,6 +162,10 @@ def process_image(
             f"Output image width must be a positive number. Received: '{output_image_width}'. Please enter a valid width (e.g., >= {MIN_VALID_OUTPUT_WIDTH}px).",
             duration=DEFAULT_ERROR_DURATION
         )
+
+    # When chunk sliders locked, non interactive chunk height returns 'str' instead of 'int'
+    chunk_w = int(chunk_w)
+    chunk_h = int(chunk_h)
 
     # if caller:
     #     print(f"{get_timestamp()} Processing image invoked from {caller} with URL: {image_url}")
