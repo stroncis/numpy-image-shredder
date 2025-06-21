@@ -98,13 +98,15 @@ def validate_inputs(
     except (TypeError, ValueError):
         raise gr.Error(
             "Chunk width and height must be valid integer numbers. Please check your input.",
-            duration=DEFAULT_ERROR_DURATION
+            duration=DEFAULT_ERROR_DURATION,
+            title="Inputs Validation"
         )
 
     if chunk_w < 2 or chunk_h < 2:
         raise gr.Error(
             "Chunk size too small. Minimum is 2px.",
-            duration=DEFAULT_ERROR_DURATION
+            duration=DEFAULT_ERROR_DURATION,
+            title="Inputs Validation"
         )
 
     try:
@@ -112,7 +114,8 @@ def validate_inputs(
     except (TypeError, ValueError):
         raise gr.Error(
             "Brightness must be valid integer number. Please check your input.",
-            duration=DEFAULT_ERROR_DURATION
+            duration=DEFAULT_ERROR_DURATION,
+            title="Inputs Validation"
         )
 
     try:
@@ -120,7 +123,8 @@ def validate_inputs(
     except (TypeError, ValueError):
         raise gr.Error(
             "Contrast must be valid float number. Please check your input.",
-            duration=DEFAULT_ERROR_DURATION
+            duration=DEFAULT_ERROR_DURATION,
+            title="Inputs Validation"
         )
 
     try:
@@ -128,7 +132,8 @@ def validate_inputs(
     except (TypeError, ValueError):
         raise gr.Error(
             "Output image width must be a valid integer number. Please check your input.",
-            duration=DEFAULT_ERROR_DURATION
+            duration=DEFAULT_ERROR_DURATION,
+            title="Inputs Validation"
         )
 
 
