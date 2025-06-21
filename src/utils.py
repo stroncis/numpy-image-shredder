@@ -40,28 +40,39 @@ def download_image(url):
         response = requests.get(url, headers=headers)
     except Exception as e:
         print(f"{get_timestamp()} ⚠️ Failed to download image from URL: {url}\nError: {e}")
-        raise gr.Error(f"Failed to download image from URL: {url}\nError: {e}", duration=DEFAULT_ERROR_DURATION)
+        raise gr.Error(
+            f"URL: {url}\nError: {e}",
+            duration=DEFAULT_ERROR_DURATION,
+            title="Image Download Error"
+        )
 
     # response.raise_for_status()
     if response.status_code != 200:
         print(f"{get_timestamp()} ⚠️ Failed to download image. Status code {response.status_code} for URL: {url}")
         raise gr.Error(
-            f"Failed to download image. Status code: {response.status_code} from URL: {url}", duration=DEFAULT_ERROR_DURATION)
+            f"Response status code: {response.status_code} from URL: {url}",
+            duration=DEFAULT_ERROR_DURATION,
+            title="Image Download Error",
+            # print_exception=False
+        )
 
     content_type = response.headers.get('Content-Type', '').lower()
     if not content_type.startswith('image/'):
         print(f"{get_timestamp()} ⚠️ URL does not point to an image. Content-Type: '{content_type}'. URL: {url}")
         raise gr.Error(
-            f"URL does not point to an image. Content-Type: '{content_type}'. URL: {url}", duration=DEFAULT_ERROR_DURATION)
+            f"URL does not point to an image. Content-Type: '{content_type}'. URL: {url}",
+            duration=DEFAULT_ERROR_DURATION,
+            title="Image Download Error"
+        )
 
     try:
         img = Image.open(BytesIO(response.content)).convert('RGB')
     except UnidentifiedImageError as e:
         print(f"{get_timestamp()} ⚠️ Cannot identify image file. Content-Type: '{content_type}'. URL: '{url}'")
         raise gr.Error(
-            f"Cannot identify image file. Content-Type: '{content_type}'. URL: '{url}'\n"
-            "Please ensure the URL points directly to an image file (e.g., .jpg, .png).",
-            duration=DEFAULT_ERROR_DURATION
+            f"Cannot identify image type. URL: '{url}'\nError: {e}",
+            duration=DEFAULT_ERROR_DURATION,
+            title="Image Processing Error (Pillow)"
         )
     return np.array(img)
 
