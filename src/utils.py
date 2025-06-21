@@ -39,26 +39,27 @@ def download_image(url):
     try:
         response = requests.get(url, headers=headers)
     except Exception as e:
-        print(f"Error downloading image from URL: {url}\nError: {e}")
+        print(f"{get_timestamp()} ⚠️ Failed to download image from URL: {url}\nError: {e}")
         raise gr.Error(f"Failed to download image from URL: {url}\nError: {e}", duration=DEFAULT_ERROR_DURATION)
 
+    # response.raise_for_status()
     if response.status_code != 200:
-        print(f"Failed to download image. Received status code {response.status_code} for URL: {url}")
+        print(f"{get_timestamp()} ⚠️ Failed to download image. Status code {response.status_code} for URL: {url}")
         raise gr.Error(
             f"Failed to download image. Status code: {response.status_code} from URL: {url}", duration=DEFAULT_ERROR_DURATION)
 
     content_type = response.headers.get('Content-Type', '').lower()
     if not content_type.startswith('image/'):
-        print(f"Warning: Content-Type is '{content_type}', which might not be an image. URL: {url}")
+        print(f"{get_timestamp()} ⚠️ URL does not point to an image. Content-Type: '{content_type}'. URL: {url}")
         raise gr.Error(
             f"URL does not point to an image. Content-Type: '{content_type}'. URL: {url}", duration=DEFAULT_ERROR_DURATION)
 
     try:
         img = Image.open(BytesIO(response.content)).convert('RGB')
-    except UnidentifiedImageError:
+    except UnidentifiedImageError as e:
+        print(f"{get_timestamp()} ⚠️ Cannot identify image file. Content-Type: '{content_type}'. URL: '{url}'")
         raise gr.Error(
-            f"Cannot identify image file from URL: {url}. "
-            f"Content-Type: {content_type}. "
+            f"Cannot identify image file. Content-Type: '{content_type}'. URL: '{url}'\n"
             "Please ensure the URL points directly to an image file (e.g., .jpg, .png).",
             duration=DEFAULT_ERROR_DURATION
         )
