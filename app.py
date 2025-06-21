@@ -175,7 +175,6 @@ def run_app():
             if current_sample and current_sample.get('multiple'):
                 return BUTTON_MULTIPLE_IMAGES_TEXT
             else:
-                print(f"❌ Sample '{selected_sample}' does not allow refreshing.")
                 return BUTTON_SINGLE_IMAGE_TEXT
         input_dropdown_sample_images.change(
             fn=on_sample_change,
