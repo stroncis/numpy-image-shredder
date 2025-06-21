@@ -7,7 +7,7 @@ import gradio as gr
 from urllib.parse import urljoin
 
 from src.config import DEFAULT_ERROR_DURATION
-from .sample_image_metadata import DEFAULT_SAMPLE_IMAGES_DATA
+from .sample_image_metadata import SAMPLE_IMAGES_DATA
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(PROJECT_ROOT, 'data')
@@ -145,7 +145,7 @@ def _fetch_image_url_with_regex(source_url, scraping_config, gr=None):
 
 if __name__ == '__main__':
     print("Testing directly invoked image updater...")
-    updated_data = DEFAULT_SAMPLE_IMAGES_DATA
+    updated_data = SAMPLE_IMAGES_DATA
     print("\nFinal data after update attempt:")
     for item_data in updated_data:
         print(f"  {item_data['name']}: {item_data['image_url']}")

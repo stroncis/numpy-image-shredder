@@ -1,7 +1,7 @@
 # Default data for JSON file, which could be corrupted on url update.
 # Scraping metadata is intended to be used for SSR only, though could be easily applied to CSR capable libs.
 # Some image URLs require parsing or transformation before usage, parsing regex instructions also included.
-DEFAULT_SAMPLE_IMAGES_DATA = [
+SAMPLE_IMAGES_DATA = [
     {
         "name": "🔄\u2003Let's breed smarties",
         "description": "Good boy/girl alert!",

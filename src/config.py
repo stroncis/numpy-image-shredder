@@ -1,6 +1,6 @@
 import os
 
-from .sample_image_metadata import DEFAULT_SAMPLE_IMAGES_DATA  # from .image_updater import get_updated_sample_images
+from .sample_image_metadata import SAMPLE_IMAGES_DATA  # from .image_updater import get_updated_sample_images
 
 # Output image width in pixels
 OUTPUT_IMAGE_WIDTH_IN_PIXELS = 1800
@@ -37,7 +37,6 @@ GUIDELINE_COLORS = {
 }
 DEFAULT_GUIDELINE_COLOR_NAME = "White"
 
-SAMPLE_IMAGES_DATA = DEFAULT_SAMPLE_IMAGES_DATA  # get_updated_sample_images()
 SAMPLE_IMAGE_CHOICES = [f"{item['name']} - {item['description']}" for item in SAMPLE_IMAGES_DATA]
 
 if SAMPLE_IMAGES_DATA:
