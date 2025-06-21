@@ -334,7 +334,11 @@ def fetch_and_process_image(
         try:
             img_array = download_image(image_url)
         except Exception as e:
-            raise gr.Error(f"Error downloading image: {str(e)}", duration=DEFAULT_ERROR_DURATION)
+            raise gr.Error(
+                f"{str(e)}",
+                duration=DEFAULT_ERROR_DURATION,
+                title="Image Fetching Error"
+            )
 
         guideline_color_rgb = np.array(GUIDELINE_COLORS.get(
             guideline_color_name, GUIDELINE_COLORS[DEFAULT_GUIDELINE_COLOR_NAME]), dtype=np.uint8)
@@ -368,7 +372,11 @@ def redraw_image(
     try:
         validate_inputs(chunk_w, chunk_h, brightness_offset, contrast_factor, output_image_width)
         if img_array is None:
-            raise gr.Error("No image loaded. Please fetch an image first.", duration=DEFAULT_ERROR_DURATION)
+            raise gr.Error(
+                "No image loaded. Please fetch an image first.",
+                duration=DEFAULT_ERROR_DURATION,
+                title="Image Redraw Error"
+            )
 
         guideline_color_rgb = np.array(GUIDELINE_COLORS.get(
             guideline_color_name, GUIDELINE_COLORS[DEFAULT_GUIDELINE_COLOR_NAME]), dtype=np.uint8)
@@ -387,7 +395,11 @@ def redraw_image(
     except gr.Error:
         raise
     except Exception as e:
-        raise gr.Error(f"An unexpected error occurred: {e}", duration=DEFAULT_ERROR_DURATION)
+        raise gr.Error(
+            f"Unexpected error: {e}",
+            duration=DEFAULT_ERROR_DURATION,
+            title="Image Redraw Error"
+        )
 
 
 def initial_load_action():
