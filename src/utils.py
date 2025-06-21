@@ -66,10 +66,11 @@ def download_image(url):
 
 
 def pad_image_to_fit_chunks(img, chunk_width, chunk_height):
-    h, w, _ = img.shape
-    # print(f"{get_timestamp()} Padding image (WxH): original size {w}x{h} ({type(w)}x{type(h)}), chunk size {chunk_width}x{chunk_height}({type(chunk_width)}x{type(chunk_height)})")
-    pad_h = (chunk_height - (h % chunk_height)) % chunk_height
-    pad_w = (chunk_width - (w % chunk_width)) % chunk_width
+    img_h, img_w, _ = img.shape
+    chunk_width = int(chunk_width)
+    chunk_height = int(chunk_height)
+    pad_h = (chunk_height - (img_h % chunk_height)) % chunk_height
+    pad_w = (chunk_width - (img_w % chunk_width)) % chunk_width
     padded_img = np.pad(img, ((0, pad_h), (0, pad_w), (0, 0)), mode='edge')
     return padded_img
 
