@@ -197,14 +197,15 @@ def run_app():
             ]
         )
 
-        # def on_url_input(url):
-        #     print(f"💬 Image URL input: {url}")
-        #     return [True, BUTTON_CUSTOM_URL_TEXT]  # Tuples also accepted
+        def on_url_input(url):
+            print(f"💬 Image URL input: {url}")
+            return [True, BUTTON_CUSTOM_URL_TEXT]  # Tuples also accepted
+
         input_textbox_img_url.input(
-            # fn=on_url_input,
-            # inputs=[input_textbox_img_url],
-            fn=lambda: (True, BUTTON_CUSTOM_URL_TEXT),
-            inputs=[],
+            fn=on_url_input,
+            inputs=[input_textbox_img_url],
+            # fn=lambda: (True, BUTTON_CUSTOM_URL_TEXT),
+            # inputs=[],
             outputs=[is_custom_url_state, input_button_update_image]
         )
 
@@ -312,10 +313,9 @@ def fetch_and_process_image(
         Fetches (scrapes if needed) and processes the image.
         Returns: processed_img, new_image_url, new_cached_array, new_cached_url
     """
+    image_url = url_from_input_field
     try:
         validate_inputs(chunk_w, chunk_h, brightness_offset, contrast_factor, output_image_width)
-
-        image_url = url_from_input_field
 
         if not is_custom_url and selected_sample_choice_str:
             current_sample = None
@@ -353,10 +353,16 @@ def fetch_and_process_image(
             image_url=image_url
         )
         return processed_img, image_url, img_array, image_url, False
-    except gr.Error:
-        raise
+    # except gr.Error:
+    #     raise
     except Exception as e:
-        raise gr.Error(f"An unexpected error occurred: {e}", duration=DEFAULT_ERROR_DURATION)
+        # raise gr.Error(f"An unexpected error occurred: {e}", duration=DEFAULT_ERROR_DURATION)
+        gr.Warning(
+            f"{e}",
+            duration=DEFAULT_ERROR_DURATION,
+            title="Image Fetching Error"
+        )
+        return None, image_url, None, image_url, is_custom_url
 
 
 def redraw_image(
@@ -419,6 +425,7 @@ def get_image_load_button_text(sample_choice_str):
             return BUTTON_SINGLE_IMAGE_TEXT
     else:
         return BUTTON_CUSTOM_URL_TEXT
+
 
 def reset_inputs_and_redraw():
     default_choice_str = set_default_choice_str()
