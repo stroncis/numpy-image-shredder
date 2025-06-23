@@ -40,11 +40,10 @@ Optionally added some extra features, numpy processing for color channels.
 
 *   **Error Handling**: Handles and displays errors in the UI.
 
-*   **Batteries included**: Comes with pre-set default values for the image URL and chunk dimensions for quick testing.
+*   **Batteries included**: Comes with pre-set default values for the image URL and chunk dimensions for quick testing and playing around.
 
 *   **More Functionality**:
-    *   Handpicked sample images to test various aspects and play around
-    *   Reset inputs to their default values.
+    *   Quick reset inputs to their default values.
     *   Image re-processing automatically on any input change (chunk size changes update results only on release).
     *   Slicing guidelines, helping identify chunk edges.
     *   Custom output image width in pixels (subplot title fonts scaled accordingly) for exporting. Vertical padding (output image aspect ratio) is dinamically adjusted.
@@ -79,10 +78,10 @@ img_array = np.array([
 
     Scraping selectors `image_selector_regex` are included in sample image metadata and can be utilized for any source, which returns SSR HTML with an image element or APIs returning JSON. For images, where scraped URL needs parsing, instructions `url_transform_regex` and `url_transform_replacement` also could be added to metadata.
 
-    Dog images are fully open sourced from [Stanford Dogs Dataset](http://vision.stanford.edu/aditya86/ImageNetDogs/), hosted by [https://dog.ceo/dog-api/](https://dog.ceo/dog-api/). Sources: [code](https://github.com/ElliottLandsborough/dog-ceo-api) ,[images](https://github.com/jigsawpieces/dog-api-images).
+    Dog images are fully open sourced from [Stanford Dogs Dataset](http://vision.stanford.edu/aditya86/ImageNetDogs/), hosted by [https://dog.ceo/dog-api/](https://dog.ceo/dog-api/). Sources: [code](https://github.com/ElliottLandsborough/dog-ceo-api), [images](https://github.com/jigsawpieces/dog-api-images).
 
 2.  **Image Preparation**:
-    *   The downloaded image is converted to a PIL Image object and then to a NumPy array.
+    *   The downloaded image is converted to a [PIL Image](https://realpython.com/image-processing-with-the-python-pillow-library/) object and then to a NumPy array.
     *   The NumPy array is padded using `np.pad` with `mode='edge'` so that its width and height are exact multiples of the user-defined `chunk_width` and `chunk_height`. As a cons, it results in _pixel stretching_ artefacts for large chunk sizes.
 
 3.  **Shredding (`shredder.py`)**:
@@ -90,7 +89,7 @@ img_array = np.array([
     *   **Horizontal Shredding**: The vertically shredded image is then sliced into horizontal chunks. These are reassembled similarly (even-indexed followed by odd-indexed), stacking them vertically to produce the final image.
 
 4.  **Color Effects Application (`utils.py -> apply_color_effect`)**: If a color effect other than "None" is selected, it's applied to the padded image array using NumPy. The image array is first converted to `np.float32` for calculations to prevent data loss or overflow, and then clipped back to the 0-255 range and converted to `np.uint8`. Though using [Pillow](https://pillow.readthedocs.io/en/stable/) to transform images (f.e grayscale, posterize, solarize etc.) would be more efficient, but this project's target is [NumPy](https://numpy.org/doc/stable/). Effects and transformations descriptions:
-    *   **Invert Colors**: `255 - img_array`. NumPy performs element-wise subtraction of each pixel value from scalar 255, broadcasting to match `img` array shape. Another way is to use `~img` or `numpy.invert(img)` bitwise NOT, which would work on `uint8`, though it is less intuitively readable. Applying this to `img_copy` (which is `float32`) would be maybe slightly less performant but still correct, though `numpy.invert(img_copy)` - not.
+    *   **Invert Colors**: `255 - img_array`. NumPy performs element-wise subtraction of each pixel value from scalar 255, broadcasting to match `img` array shape. Another way is to use `~img` or `numpy.invert(img)` bitwise NOT, which would work on `uint8`, though it is less intuitively readable. Applying this to `img_copy` (which is `float32`) would be maybe slightly less performant but still correct, though `numpy.invert(img_copy)`- not.
 
     *   **Swap R/G Channels**: `swapped_img[..., 0], swapped_img[..., 1] = swapped_img[..., 1].copy(), swapped_img[..., 0].copy()`. NumPy's array slicing is used to select the <span style="color:red">Red</span> and <span style="color:green">Green</span> channels (0 and 1 respectively, on the last axis) and swap their contents.
 
@@ -110,7 +109,7 @@ img_array = np.array([
         > Applied to Green = (R * 0.349) + (G * 0.686) + (B * 0.168)
         > Applied to Blue = (R * 0.272) + (G * 0.534) + (B * 0.131)
         > ```
-        > Changing coefficients, different sepia variations can be achieved, [more on topic](https://leware.net/photo/blogSepia.html).
+        > Changing coefficients, different sepia variations can be achieved, so in most cases software developers or camera manufacturers have their own version. [More on topic](https://leware.net/photo/blogSepia.html).
 
     *   **Brightness Up/Down**: `np.clip(img_copy + 30, 0, 255)` or `np.clip(img_copy - 30, 0, 255)`. A constant value is added to or subtracted from every pixel value in the NumPy array. `np.clip` ensures values remain in the valid [0, 255] range.
 
@@ -125,7 +124,7 @@ img_array = np.array([
         ![Output view](assets/images/result_example.png)
     *   Output view with color alteration - swap <span style="color:red">red</span> and <span style="color:green">green</span> channels, can reveal some hidden truth (tip: try grayscale version, it renders both dog expressions at once as all channels are combined):
         ![Output with effect](assets/images/result_fx_example_1.png)
-    *   Output view with multiple effects - leaving <span style="color:red">red</span> channel only and popping brightness with contrast:
+    *   Output view with multiple effects - leaving <span style="color:red">red</span> channel only and popping brightness with contrast. This also displays transformations limited effect on an image, because only red channel is present and max brightness is just **<span style="color:red">RED</span>**, also contrast has no room to work on as it has only 256 levels of shade:
         ![Output with multiple effects](assets/images/result_fx_example_2.png)
     *   Output view with slicing guidelines, helps visualising action results:
         ![Output with guidelines](assets/images/result_guidelines_example.png)
