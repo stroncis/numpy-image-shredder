@@ -22,7 +22,7 @@ Optionally added some extra features, numpy processing for color channels.
     1.  **Vertical Shredding**: Image is sliced into vertical strips, which are then reordered (even-indexed strips followed by odd-indexed strips).
     2.  **Horizontal Shredding**: The result of vertical shredding is then sliced into horizontal strips, which are similarly reordered.
 
-*   **Color Effects**: A Numpy playground as a selection of color transformations applied to the image using NumPy array operations:
+*   **Color Effects**: A Numpy playground as a selection of color transformations applied to the image using NumPy array operations (can be appliet simultaneously and in a specific order):
     *   Invert Colors
     *   Swap R/G Channels
     *   Red Channel Only
@@ -88,7 +88,7 @@ img_array = np.array([
     *   **Vertical Shredding**: The padded image is sliced into vertical chunks. These chunks are then reassembled by first taking all even-indexed chunks and then all odd-indexed chunks, stacking them horizontally.
     *   **Horizontal Shredding**: The vertically shredded image is then sliced into horizontal chunks. These are reassembled similarly (even-indexed followed by odd-indexed), stacking them vertically to produce the final image.
 
-4.  **Color Effects Application (`utils.py -> apply_color_effect`)**: If a color effect other than "None" is selected, it's applied to the padded image array using NumPy. The image array is first converted to `np.float32` for calculations to prevent data loss or overflow, and then clipped back to the 0-255 range and converted to `np.uint8`. Though using [Pillow](https://pillow.readthedocs.io/en/stable/) to transform images (f.e grayscale, posterize, solarize etc.) would be more efficient, but this project's target is [NumPy](https://numpy.org/doc/stable/). Effects and transformations descriptions:
+4.  **Color Effects Application (`utils.py -> apply_color_effect`)**: If any checkbox in color effects is selected, it's applied to the padded image array using NumPy. The order of selection is important and `solarize -> invert` is not equal to `invert -> solarize`. The image array is first converted to `np.float32` for calculations to prevent data loss or overflow, and then clipped back to the 0-255 range and converted to `np.uint8`. Though using [Pillow](https://pillow.readthedocs.io/en/stable/) to transform images (f.e grayscale, posterize, solarize etc.) would be more efficient, but this project's target is [NumPy](https://numpy.org/doc/stable/). Effects and transformations descriptions:
     *   **Invert Colors**: `255 - img_array`. NumPy performs element-wise subtraction of each pixel value from scalar 255, broadcasting to match `img` array shape. Another way is to use `~img` or `numpy.invert(img)` bitwise NOT, which would work on `uint8`, though it is less intuitively readable. Applying this to `img_copy` (which is `float32`) would be maybe slightly less performant but still correct, though `numpy.invert(img_copy)`- not.
 
     *   **Swap R/G Channels**: `swapped_img[..., 0], swapped_img[..., 1] = swapped_img[..., 1].copy(), swapped_img[..., 0].copy()`. NumPy's array slicing is used to select the <span style="color:red">Red</span> and <span style="color:green">Green</span> channels (0 and 1 respectively, on the last axis) and swap their contents.
