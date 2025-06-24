@@ -8,10 +8,11 @@ import gradio as gr
 from PIL import Image, UnidentifiedImageError
 
 from src.shredder import shred_image
-from .config import (
+from src.config import (
     OUTPUT_IMAGE_DPI, OUTPUT_IMAGE_ASPECT_RATIO, OUTPUT_IMAGE_WIDTH_IN_PIXELS,
     MIN_VALID_OUTPUT_WIDTH, DEFAULT_TITLE_FONT_SIZE, MIN_CHUNK_SIZE_PX, INITIAL_MAX_CHUNK_PX,
-    SAMPLE_IMAGES_DATA, DEFAULT_IMAGE_URL, DEFAULT_ERROR_DURATION, SAMPLE_IMAGE_CHOICES
+    SAMPLE_IMAGES_DATA, DEFAULT_IMAGE_URL, DEFAULT_ERROR_DURATION, SAMPLE_IMAGE_CHOICES,
+    CHUNK_RATIO_LOCKED_LABEL, CHUNK_RATIO_UNLOCKED_LABEL
 )
 
 # fmt: off
@@ -385,9 +386,9 @@ def set_default_choice_str():
 def lock_slider_ratio(is_locked, width_val, height_val):
     if is_locked:
         delta = height_val - width_val
-        return delta, gr.update(interactive=False)
+        return delta, gr.update(interactive=False), gr.update(label=CHUNK_RATIO_LOCKED_LABEL)
     else:
-        return 0, gr.update(interactive=True)
+        return 0, gr.update(interactive=True), gr.update(label=CHUNK_RATIO_UNLOCKED_LABEL)
 
 
 def sync_height_to_width(is_locked, width_val, delta):

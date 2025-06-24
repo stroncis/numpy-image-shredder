@@ -15,7 +15,8 @@ from src.config import (
     GUIDELINE_COLORS, DEFAULT_GUIDELINE_COLOR_NAME,
     OUTPUT_IMAGE_WIDTH_IN_PIXELS, MIN_VALID_OUTPUT_WIDTH,
     DEFAULT_ERROR_DURATION, SAMPLE_IMAGE_CHOICES,
-    BUTTON_SINGLE_IMAGE_TEXT, BUTTON_MULTIPLE_IMAGES_TEXT, BUTTON_CUSTOM_URL_TEXT
+    BUTTON_SINGLE_IMAGE_TEXT, BUTTON_MULTIPLE_IMAGES_TEXT,
+    BUTTON_CUSTOM_URL_TEXT, CHUNK_RATIO_UNLOCKED_LABEL
 )
 
 
@@ -85,7 +86,7 @@ def run_app():
                     scale=10
                 )
                 input_checkbox_chunk_lock_ratio = gr.Checkbox(
-                    label="🔒",
+                    label=CHUNK_RATIO_UNLOCKED_LABEL,
                     value=False,
                     scale=1,
                     min_width=50
@@ -269,7 +270,7 @@ def run_app():
         input_checkbox_chunk_lock_ratio.change(
             fn=lock_slider_ratio,
             inputs=[*slider_sync_triggers, input_slider_chunk_h],
-            outputs=[chunk_delta_state, input_slider_chunk_h]
+            outputs=[chunk_delta_state, input_slider_chunk_h, input_checkbox_chunk_lock_ratio]
         )
 
         input_slider_chunk_w.release(
