@@ -22,7 +22,7 @@ Optionally added some extra features, numpy processing for color channels.
     1.  **Vertical Shredding**: Image is sliced into vertical strips, which are then reordered (even-indexed strips followed by odd-indexed strips).
     2.  **Horizontal Shredding**: The result of vertical shredding is then sliced into horizontal strips, which are similarly reordered.
 
-*   **Color Effects**: A Numpy playground as a selection of color transformations applied to the image using NumPy array operations (can be appliet simultaneously and in a specific order):
+*   **Color Effects**: A Numpy playground as a selection of color transformations applied to the image using NumPy array operations (can be multiple effects checked simultaneously and in a specific order):
     *   Invert Colors
     *   Swap R/G Channels
     *   Red Channel Only
@@ -97,19 +97,19 @@ img_array = np.array([
 
     *   **Grayscale**: `gray_img = np.mean(img_copy, axis=2, keepdims=True)`. NumPy calculates the mean pixel value across the color channels (axis 2) for each pixel. `keepdims=True` maintains the third dimension, and the result is then broadcasted across three channels using `np.repeat(gray_img, 3, axis=2)`.
 
-        > **Why three identical channels** - when Matplotlib receives a single channel image array, it applies color mapping (`viridis` by default, <span style="color:blue">blue</span>-<span style="color:green">green</span>-<span style="color:goldenrod">yellow</span> gradient), so to make a grayscale image and display ir correctly, we have to keep all channels.
+        **Why three identical channels** - when Matplotlib receives a single channel image array, it applies color mapping (`viridis` by default, <span style="color:blue">blue</span>-<span style="color:green">green</span>-<span style="color:goldenrod">yellow</span> gradient), so to make a grayscale image and display ir correctly, we have to keep all channels.
 
     *   **Grayscale 1 Channel**: 1 channel version to demonstrate how Matplotlib applies `viridis` (default) [colormap](https://matplotlib.org/stable/users/explain/colors/colormaps.html).
 
     *   **Sepia**: Effect immitates aged photo prints, which naturally appears due to chemical changes, like silver sulfides, paper aging and others. A standard sepia transformation matrix (3x3, sepia kernel) is applied. For each pixel, the new R, G, B values are linear combinations of the original R, G, B values (e.g., `R_new = R_orig*0.393 + G_orig*0.769 + B_orig*0.189`). This is achieved through element-wise multiplication and addition on NumPy arrays representing the individual channels.
 
-        > Standard sepia transformation matrix coefficients:
-        > ```
-        > Applied to Red = (R * 0.393) + (G * 0.769) + (B * 0.189)
-        > Applied to Green = (R * 0.349) + (G * 0.686) + (B * 0.168)
-        > Applied to Blue = (R * 0.272) + (G * 0.534) + (B * 0.131)
-        > ```
-        > Changing coefficients, different sepia variations can be achieved, so in most cases software developers or camera manufacturers have their own version. [More on topic](https://leware.net/photo/blogSepia.html).
+        Standard sepia transformation matrix coefficients:
+        ```
+        Applied to Red = (R * 0.393) + (G * 0.769) + (B * 0.189)
+        Applied to Green = (R * 0.349) + (G * 0.686) + (B * 0.168)
+        Applied to Blue = (R * 0.272) + (G * 0.534) + (B * 0.131)
+        ```
+        Changing coefficients, different sepia variations can be achieved, so in most cases software developers or camera manufacturers have their own version. [More on topic](https://leware.net/photo/blogSepia.html).
 
     *   **Brightness Up/Down**: `np.clip(img_copy + 30, 0, 255)` or `np.clip(img_copy - 30, 0, 255)`. A constant value is added to or subtracted from every pixel value in the NumPy array. `np.clip` ensures values remain in the valid [0, 255] range.
 
