@@ -420,7 +420,7 @@ def print_event_data(input_component):
     def print_event_string(label, comp_type, event_type, value):
         print(f"{get_timestamp()} 🛎️  {event_type} from {comp_type} '{label}' event value: {value}")
 
-    if isinstance(input_component, gr.Button):
+    if isinstance(input_component, (gr.Button, gr.UploadButton, gr.DownloadButton)):
         input_component.click(
             fn=print_event_string,
             inputs=[

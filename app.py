@@ -1,3 +1,6 @@
+import json
+import tempfile
+
 import gradio as gr
 import numpy as np
 from gradio.themes.utils import sizes as theme_sizes  # Because Gradio lookup fails
@@ -22,7 +25,9 @@ from src.config import (
 
 def run_app():
     css = """
-        .load-button { background-color: #FF5733 !important; color: white !important; }
+        .image-load-button { background-color: #FF5733 !important; color: white !important; }
+        .settings-save-button { background-color: #28A745 !important; color: white !important; }
+        # .settings-reset-button { background-color: #007BFF !important; color: white !important; }
     """
     with gr.Blocks(
         title="NumPy Image Shredder",
@@ -74,7 +79,7 @@ def run_app():
             with gr.Row(equal_height=True):
                 input_textbox_img_url = gr.Textbox(label='Image URL', value=DEFAULT_IMAGE_URL, scale=6)
                 input_button_update_image = gr.Button(
-                    "Reload image", elem_id="Reload button", scale=1, min_width=10, elem_classes=["load-button"])
+                    "Reload image", elem_id="Reload button", scale=1, min_width=10, elem_classes=["image-load-button"])
 
             with gr.Row():
                 input_slider_chunk_w = gr.Slider(
@@ -139,15 +144,20 @@ def run_app():
         output_image_component = gr.Image(type='pil', show_label=False, format='png')
 
         with gr.Row():
-            input_button_reset_to_defaults = gr.Button("Reset to defaults", elem_id="Reset settings button")
+            input_button_reset_to_defaults = gr.Button("Reset to defaults", elem_id="Reset settings button", elem_classes=["settings-reset-button"])
+            input_button_save_settings = gr.DownloadButton("Download settings", elem_id="Save settings button", elem_classes=["settings-save-button"])
+            input_button_load_settings = gr.UploadButton(
+                "Load settings", file_types=[".json"], elem_id="Load settings button", elem_classes=["settings-load-button"])
 
         # --------------------------------* Event Handlers *--------------------------------
 
+        # Print all input components' event data for user actions debugging
         all_input_components = [
             input_dropdown_sample_images, input_textbox_img_url, input_button_update_image,
             input_slider_chunk_w, input_checkbox_chunk_lock_ratio, input_slider_chunk_h, input_checkboxes_color_effects,
             input_slider_brightness, input_slider_contrast, input_checkbox_show_guidelines,
-            input_dropdown_guideline_color, input_field_output_width, input_button_reset_to_defaults
+            input_dropdown_guideline_color, input_field_output_width, input_button_reset_to_defaults,
+            input_button_save_settings, input_button_load_settings
         ]
 
         for input_component in all_input_components:
@@ -265,6 +275,49 @@ def run_app():
             ]
         )
 
+        # Set up the event handlers for the image processing input components
+        image_processing_input_components = [
+            input_slider_chunk_w, input_slider_chunk_h, input_checkbox_chunk_lock_ratio,
+            input_checkboxes_color_effects, input_slider_brightness, input_slider_contrast
+        ]
+
+        for component in image_processing_input_components:
+            component.change(
+                fn=prepare_settings_file,
+                inputs=[
+                    input_slider_chunk_w, input_slider_chunk_h, input_checkbox_chunk_lock_ratio,
+                    input_checkboxes_color_effects, input_slider_brightness, input_slider_contrast
+                ],
+                outputs=[input_button_save_settings]
+            )
+
+        input_button_save_settings.click(
+            fn=prepare_settings_file,
+            inputs=[
+                input_slider_chunk_w, input_slider_chunk_h,
+                input_checkbox_chunk_lock_ratio, input_checkboxes_color_effects,
+                input_slider_brightness, input_slider_contrast
+            ],
+            outputs=[input_button_save_settings]
+        )
+
+        input_button_load_settings.upload(
+            fn=load_settings_and_redraw,
+            inputs=[
+                input_button_load_settings,
+                cached_image_array_state, cached_image_url_state,
+                input_checkbox_show_guidelines, input_dropdown_guideline_color,
+                input_field_output_width
+            ],
+            outputs=[
+                input_slider_chunk_w, input_slider_chunk_h,
+                input_checkbox_chunk_lock_ratio, input_checkboxes_color_effects,
+                input_slider_brightness, input_slider_contrast,
+                output_image_component, cached_image_array_state, cached_image_url_state
+            ]
+        )
+
+        # Chunk size event handlers
         slider_sync_triggers = [input_checkbox_chunk_lock_ratio, input_slider_chunk_w]
 
         input_checkbox_chunk_lock_ratio.change(
@@ -293,6 +346,73 @@ def run_app():
         )
 
     image_shredder_app.launch()
+
+
+def prepare_settings_file(chunk_w, chunk_h, is_locked, color_effects, brightness, contrast):
+    """Prepares the current settings, dumps to a temporary JSON file and returns its path for download button."""
+    settings = {
+        "chunk_w": chunk_w,
+        "chunk_h": chunk_h,
+        "is_locked": is_locked,
+        "color_effects": color_effects,
+        "brightness": brightness,
+        "contrast": contrast,
+    }
+    file_name = "image_shredder_settings"
+    safe_name = "".join(c for c in str(file_name) if c.isalnum() or c in ("-", "_")).rstrip()
+    if not safe_name:
+        safe_name = "settings"
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".json", prefix=safe_name + "_", mode="w", encoding="utf-8")
+    json.dump(settings, tmp, indent=4)
+    tmp.close()
+    # print(f"Settings prepared for download: {tmp.name}")
+    return gr.update(value=tmp.name)
+
+
+def load_settings_and_redraw(
+    uploaded_file,
+    img_array, image_url,
+    show_guidelines, guideline_color_name, output_image_width
+):
+    """Loads settings from an uploaded JSON file and redraws the image."""
+    if uploaded_file is None:
+        gr.Warning("No file uploaded.")
+        return (gr.skip(),) * 9
+
+    try:
+        with open(uploaded_file.name, 'r', encoding='utf-8') as f:
+            settings = json.load(f)
+    except Exception as e:
+        raise gr.Error(f"Failed to load or parse settings file: {e}")
+
+    chunk_w = settings.get("chunk_w", DEFAULT_CHUNK_W)
+    chunk_h = settings.get("chunk_h", DEFAULT_CHUNK_H)
+    is_locked = settings.get("is_locked", False)
+    color_effects = settings.get("color_effects", DEFAULT_COLOR_EFFECT)
+    brightness = settings.get("brightness", DEFAULT_BRIGHTNESS)
+    contrast = settings.get("contrast", DEFAULT_CONTRAST)
+
+    try:
+        processed_img, new_img_array, new_image_url = redraw_image(
+            img_array, image_url,
+            chunk_w, chunk_h, color_effects,
+            brightness, contrast,
+            show_guidelines, guideline_color_name, output_image_width
+        )
+
+        return (
+            gr.update(value=chunk_w),
+            gr.update(value=chunk_h),
+            gr.update(value=is_locked),
+            gr.update(value=color_effects),
+            gr.update(value=brightness),
+            gr.update(value=contrast),
+            processed_img,
+            new_img_array,
+            new_image_url
+        )
+    except Exception as e:
+        raise gr.Error(f"Error applying loaded settings: {e}")
 
 
 def redraw_if_guidelines(show_guidelines, *args):
