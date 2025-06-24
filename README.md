@@ -6,9 +6,9 @@ Optionally added some extra features, numpy processing for color channels.
 
 ## Features
 
-*   **Web-Based UI**:
-
-    ![App GUI view](assets/images/app_gui_layout.png)
+*   **Web-Based UI**:<br>
+    ![App GUI view](assets/images/app_gui_layout-dark.png#gh-dark-mode-only)
+    ![App GUI view](assets/images/app_gui_layout-light.png#gh-light-mode-only)
 
 *   **Image Input via URL**: Users can provide any direct image URL.
 
