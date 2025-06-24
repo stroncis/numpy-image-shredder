@@ -53,10 +53,10 @@ BUTTON_CUSTOM_URL_TEXT = "Load image"
 
 # Effects for Radio buttons
 COLOR_EFFECTS = [
-    "None", "Invert Colors", "Swap R/G Channels", "Red Channel Only",
+    "Invert Colors", "Swap R/G Channels", "Red Channel Only",
     "Grayscale", "Grayscale 1 Channel", "Sepia", "Solarize"
 ]
-DEFAULT_COLOR_EFFECT = "None"
+DEFAULT_COLOR_EFFECT = []
 
 # Defaults for sliders
 DEFAULT_BRIGHTNESS = 0

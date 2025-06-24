@@ -101,8 +101,8 @@ def run_app():
                     interactive=True
                 )
 
-            input_radio_color_effect = gr.Radio(
-                label="Base Color Effect",
+            input_checkboxes_color_effects = gr.CheckboxGroup(
+                label="Color Effects (applied in order)",
                 choices=COLOR_EFFECTS,
                 value=DEFAULT_COLOR_EFFECT
             )
@@ -145,7 +145,7 @@ def run_app():
 
         all_input_components = [
             input_dropdown_sample_images, input_textbox_img_url, input_button_update_image,
-            input_slider_chunk_w, input_checkbox_chunk_lock_ratio, input_slider_chunk_h, input_radio_color_effect,
+            input_slider_chunk_w, input_checkbox_chunk_lock_ratio, input_slider_chunk_h, input_checkboxes_color_effects,
             input_slider_brightness, input_slider_contrast, input_checkbox_show_guidelines,
             input_dropdown_guideline_color, input_field_output_width, input_button_reset_to_defaults
         ]
@@ -158,7 +158,7 @@ def run_app():
             inputs=[
                 is_custom_url_state, input_dropdown_sample_images,
                 input_textbox_img_url, input_slider_chunk_w, input_slider_chunk_h,
-                input_radio_color_effect, input_slider_brightness, input_slider_contrast,
+                input_checkboxes_color_effects, input_slider_brightness, input_slider_contrast,
                 input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width
             ],
             outputs=[
@@ -187,7 +187,7 @@ def run_app():
             fn=fetch_and_process_image,
             inputs=[
                 is_custom_url_state, input_dropdown_sample_images, input_textbox_img_url,
-                input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
+                input_slider_chunk_w, input_slider_chunk_h, input_checkboxes_color_effects,
                 input_slider_brightness, input_slider_contrast,
                 input_checkbox_show_guidelines, input_dropdown_guideline_color,
                 input_field_output_width
@@ -214,7 +214,7 @@ def run_app():
             fn=fetch_and_process_image,
             inputs=[
                 is_custom_url_state, input_dropdown_sample_images, input_textbox_img_url,
-                input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
+                input_slider_chunk_w, input_slider_chunk_h, input_checkboxes_color_effects,
                 input_slider_brightness, input_slider_contrast, input_checkbox_show_guidelines,
                 input_dropdown_guideline_color, input_field_output_width
             ],
@@ -225,7 +225,7 @@ def run_app():
         )
 
         for input_component in [
-            input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
+            input_slider_chunk_w, input_slider_chunk_h, input_checkboxes_color_effects,
             input_slider_brightness, input_slider_contrast,
             input_checkbox_show_guidelines, input_field_output_width
         ]:
@@ -233,7 +233,7 @@ def run_app():
                 fn=redraw_image,
                 inputs=[
                     cached_image_array_state, cached_image_url_state,
-                    input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
+                    input_slider_chunk_w, input_slider_chunk_h, input_checkboxes_color_effects,
                     input_slider_brightness, input_slider_contrast,
                     input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width
                 ],
@@ -245,7 +245,7 @@ def run_app():
             inputs=[
                 input_checkbox_show_guidelines,
                 cached_image_array_state, cached_image_url_state,
-                input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
+                input_slider_chunk_w, input_slider_chunk_h, input_checkboxes_color_effects,
                 input_slider_brightness, input_slider_contrast,
                 input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width
             ],
@@ -257,7 +257,7 @@ def run_app():
             inputs=[],
             outputs=[
                 input_dropdown_sample_images, input_textbox_img_url,
-                input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
+                input_slider_chunk_w, input_slider_chunk_h, input_checkboxes_color_effects,
                 input_slider_brightness, input_slider_contrast,
                 input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width,
                 output_image_component, cached_image_array_state, cached_image_url_state,
@@ -284,7 +284,7 @@ def run_app():
             inputs=[],
             outputs=[
                 input_dropdown_sample_images, input_textbox_img_url,
-                input_slider_chunk_w, input_slider_chunk_h, input_radio_color_effect,
+                input_slider_chunk_w, input_slider_chunk_h, input_checkboxes_color_effects,
                 input_slider_brightness, input_slider_contrast,
                 input_checkbox_show_guidelines, input_dropdown_guideline_color, input_field_output_width,
                 output_image_component, cached_image_array_state, cached_image_url_state,
@@ -306,7 +306,7 @@ def fetch_and_process_image(
     is_custom_url,
     selected_sample_choice_str,
     url_from_input_field,
-    chunk_w, chunk_h, color_effect,
+    chunk_w, chunk_h, color_effects,
     brightness_offset, contrast_factor,
     show_guidelines, guideline_color_name, output_image_width
 ):
@@ -345,7 +345,7 @@ def fetch_and_process_image(
         processed_img = process_image(
             base_img_array=img_array,
             chunk_w=chunk_w, chunk_h=chunk_h,
-            color_effect=color_effect,
+            color_effects=color_effects,
             brightness_offset=brightness_offset,
             contrast_factor=contrast_factor,
             show_guidelines=show_guidelines,
@@ -368,7 +368,7 @@ def fetch_and_process_image(
 
 def redraw_image(
     img_array, image_url,
-    chunk_w, chunk_h, color_effect,
+    chunk_w, chunk_h, color_effects,
     brightness_offset, contrast_factor,
     show_guidelines, guideline_color_name, output_image_width
 ):
@@ -389,7 +389,7 @@ def redraw_image(
         processed_img = process_image(
             base_img_array=img_array,
             chunk_w=chunk_w, chunk_h=chunk_h,
-            color_effect=color_effect,
+            color_effects=color_effects,
             brightness_offset=brightness_offset,
             contrast_factor=contrast_factor,
             show_guidelines=show_guidelines,
@@ -434,7 +434,7 @@ def reset_inputs_and_redraw():
     default_url = DEFAULT_IMAGE_URL
     default_chunk_w = DEFAULT_CHUNK_W
     default_chunk_h = DEFAULT_CHUNK_H
-    default_color_effect = DEFAULT_COLOR_EFFECT
+    default_color_effects = DEFAULT_COLOR_EFFECT
     default_brightness = DEFAULT_BRIGHTNESS
     default_contrast = DEFAULT_CONTRAST
     default_show_guidelines = DEFAULT_SHOW_GUIDELINES
@@ -444,14 +444,14 @@ def reset_inputs_and_redraw():
     processed_img, image_url, img_array, cached_url, is_custom_url = fetch_and_process_image(
         False,
         default_choice_str, default_url,
-        default_chunk_w, default_chunk_h, default_color_effect,
+        default_chunk_w, default_chunk_h, default_color_effects,
         default_brightness, default_contrast,
         default_show_guidelines, default_guideline_color, default_output_width
     )
 
     return (
         default_choice_str, image_url, default_chunk_w, default_chunk_h,
-        default_color_effect, default_brightness, default_contrast,
+        default_color_effects, default_brightness, default_contrast,
         default_show_guidelines, default_guideline_color, default_output_width,
         processed_img, img_array, cached_url, is_custom_url, submit_button_text
     )

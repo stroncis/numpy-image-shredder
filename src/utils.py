@@ -142,7 +142,7 @@ def process_image(
     base_img_array,
     chunk_w,
     chunk_h,
-    color_effect,
+    color_effects,
     brightness_offset,
     contrast_factor,
     show_guidelines,
@@ -177,7 +177,7 @@ def process_image(
     #     print(f"{get_timestamp()} Processing image invoked from {caller} with URL: {image_url}")
 
     padded_img = pad_image_to_fit_chunks(base_img_array, chunk_w, chunk_h)
-    img_after_effects = apply_color_effect(padded_img, color_effect, brightness_offset, contrast_factor)
+    img_after_effects = apply_color_effect(padded_img, color_effects, brightness_offset, contrast_factor)
 
     vertical_shred, final_shred = shred_image(img_after_effects, chunk_w, chunk_h)
 
@@ -191,8 +191,8 @@ def process_image(
             final_shred, chunk_h, orientation='horizontal', line_color_rgb=guideline_color_rgb_array)
 
     effects_applied_list = []
-    if color_effect != "None":
-        effects_applied_list.append(color_effect)
+    if color_effects:
+        effects_applied_list.extend(color_effects)
     if brightness_offset != 0:
         effects_applied_list.append(f"Bright {brightness_offset:+.0f}")
     if contrast_factor != 1.0:
@@ -266,42 +266,57 @@ def process_image(
     return img_result
 
 
-def apply_color_effect(img, effect, brightness_offset, contrast_factor):
+def apply_color_effect(img, effects_list, brightness_offset, contrast_factor):
     img_temp_float = img.astype(np.float32)
 
-    if effect == "Invert Colors":
-        img_temp_float = 255 - img_temp_float
-    elif effect == "Swap R/G Channels":
-        temp_swap = img_temp_float.copy()
-        temp_swap[..., 0], temp_swap[..., 1] = temp_swap[..., 1].copy(), temp_swap[..., 0].copy()
-        img_temp_float = temp_swap
-    elif effect == "Red Channel Only":
-        temp_red = img_temp_float.copy()
-        temp_red[..., 1:] = 0
-        img_temp_float = temp_red
-    elif effect == "Grayscale":
-        gray_img_single_channel = np.mean(img_temp_float, axis=2, keepdims=True)
-        # Converting to 3-channel grayscale image. It is "stupid" way to do, but otherwise Matplotlib will colormap it
-        img_temp_float = np.repeat(gray_img_single_channel, 3, axis=2)
-    elif effect == "Grayscale 1 Channel":
-        img_temp_float = np.mean(img_temp_float, axis=2, keepdims=True)
-    elif effect == "Sepia":
-        if img_temp_float.shape[2] < 3:
-            # Sepia requires all channels
-            return img  # This will be colormapped by Matplotlib
-        sepia_matrix = np.array([
-            [0.393, 0.769, 0.189],
-            [0.349, 0.686, 0.168],
-            [0.272, 0.534, 0.131]
-        ])
-        r, g, b = img_temp_float[..., 0].copy(), img_temp_float[..., 1].copy(), img_temp_float[..., 2].copy()
-        img_temp_float[..., 0] = r * sepia_matrix[0, 0] + g * sepia_matrix[0, 1] + b * sepia_matrix[0, 2]
-        img_temp_float[..., 1] = r * sepia_matrix[1, 0] + g * sepia_matrix[1, 1] + b * sepia_matrix[1, 2]
-        img_temp_float[..., 2] = r * sepia_matrix[2, 0] + g * sepia_matrix[2, 1] + b * sepia_matrix[2, 2]
-    elif effect == "Solarize":
-        threshold = 128 + 64 + 16
-        condition = img_temp_float >= threshold
-        img_temp_float[condition] = 255 - img_temp_float[condition]
+    if not effects_list:
+        effects_list = []
+
+    for effect in effects_list:
+        if effect == "Invert Colors":
+            img_temp_float = 255 - img_temp_float
+        elif effect == "Swap R/G Channels":
+            if img_temp_float.ndim < 3 or img_temp_float.shape[2] < 3:
+                print(f"Warning: '{effect}' effect skipped as image does not have 3 channels.")
+                continue
+            temp_swap = img_temp_float.copy()
+            temp_swap[..., 0], temp_swap[..., 1] = temp_swap[..., 1].copy(), temp_swap[..., 0].copy()
+            img_temp_float = temp_swap
+        elif effect == "Red Channel Only":
+            if img_temp_float.ndim < 3 or img_temp_float.shape[2] < 3:
+                print(f"Warning: '{effect}' effect skipped as image does not have 3 channels.")
+                continue
+            temp_red = img_temp_float.copy()
+            temp_red[..., 1:] = 0
+            img_temp_float = temp_red
+        elif effect == "Grayscale":
+            if img_temp_float.ndim < 3:
+                print(f"Warning: '{effect}' effect skipped as image does not have color channels.")
+                continue
+            gray_img_single_channel = np.mean(img_temp_float, axis=2, keepdims=True)
+            img_temp_float = np.repeat(gray_img_single_channel, 3, axis=2)
+        elif effect == "Grayscale 1 Channel":
+            if img_temp_float.ndim < 3:
+                print(f"Warning: '{effect}' effect skipped as image does not have color channels.")
+                continue
+            img_temp_float = np.mean(img_temp_float, axis=2, keepdims=True)
+        elif effect == "Sepia":
+            if img_temp_float.ndim < 3 or img_temp_float.shape[2] < 3:
+                print(f"Warning: '{effect}' effect skipped as image does not have 3 channels.")
+                continue
+            sepia_matrix = np.array([
+                [0.393, 0.769, 0.189],
+                [0.349, 0.686, 0.168],
+                [0.272, 0.534, 0.131]
+            ])
+            r, g, b = img_temp_float[..., 0].copy(), img_temp_float[..., 1].copy(), img_temp_float[..., 2].copy()
+            img_temp_float[..., 0] = r * sepia_matrix[0, 0] + g * sepia_matrix[0, 1] + b * sepia_matrix[0, 2]
+            img_temp_float[..., 1] = r * sepia_matrix[1, 0] + g * sepia_matrix[1, 1] + b * sepia_matrix[1, 2]
+            img_temp_float[..., 2] = r * sepia_matrix[2, 0] + g * sepia_matrix[2, 1] + b * sepia_matrix[2, 2]
+        elif effect == "Solarize":
+            threshold = 128 + 64 + 16
+            condition = img_temp_float >= threshold
+            img_temp_float[condition] = 255 - img_temp_float[condition]
 
     if brightness_offset != 0:
         img_temp_float = img_temp_float + brightness_offset
