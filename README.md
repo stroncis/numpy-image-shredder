@@ -22,7 +22,7 @@ Optionally added some extra features, numpy processing for color channels.
     1.  **Vertical Shredding**: Image is sliced into vertical strips, which are then reordered (even-indexed strips followed by odd-indexed strips).
     2.  **Horizontal Shredding**: The result of vertical shredding is then sliced into horizontal strips, which are similarly reordered.
 
-*   **Color Effects**: A Numpy playground as a selection of color transformations applied to the image using NumPy array operations (can be multiple effects checked simultaneously and in a specific order):
+*   **Color Effects**: A Numpy playground as a selection of color transformations applied to the image using NumPy array operations (can be multiple effects checked simultaneously and in a desired application order):
     *   Invert Colors
     *   Swap R/G Channels
     *   Red Channel Only
